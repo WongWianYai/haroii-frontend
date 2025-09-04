@@ -3,6 +3,13 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Poppins } from 'next/font/google';
 import { Html } from "next/document";
+import { IBM_Plex_Sans_Thai_Looped } from "next/font/google";
+
+const ibmThai = IBM_Plex_Sans_Thai_Looped({
+  subsets: ["thai", "latin"],
+  weight: ["100","200","300","400","500","600","700"], // เลือกเท่าที่ใช้จริง เพื่อลดขนาด
+  display: "swap",
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" >
+    <html lang="th" className={ibmThai.className} >
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
        
