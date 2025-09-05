@@ -7,12 +7,16 @@ import { API_URL } from "@/config";
 import { Eye, EyeOff } from "lucide-react";
 
 import Link from "next/link";
+import { register } from "module";
 
 interface FormData {
   name: string;
   phone: string;
   email: string;
   password: string;
+  restaurantName: string;
+  restaurantPhone: string;
+  restaurantAddress: string;
 }
 
 function Auth() {
@@ -21,11 +25,42 @@ function Auth() {
     phone: "",
     email: "",
     password: "",
+    restaurantName: "",
+    restaurantPhone: "",
+    restaurantAddress: "",
   });
   const [isRegister, setIsRegister] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const dataBody = {
+    email: formData.email,
+    password: formData.password,
+
+    ...(!isRegister
+      ? {
+          phone: formData.phone,
+          password: formData.password,
+          restaurantName: formData.restaurantName,
+          restaurantPhone: formData.restaurantPhone,
+          restaurantAddress: formData.restaurantAddress,
+        }
+      : {}),
+  };
+
+  const bodyData = {
+    email: formData.email,
+    password: formData.password,
+    ...(isRegister
+      ? {
+          name: formData.name,
+          phone: formData.phone,
+          restaurantName: formData.restaurantName,
+          restaurantPhone: formData.restaurantPhone,
+          restaurantAddress: formData.restaurantAddress,
+        }
+      : {}),
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -33,21 +68,15 @@ function Auth() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(
-        `${API_URL}/auth/${isRegister ? "login" : "register-restaurant"}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            // Add CORS headers if needed
-          },
-          credentials: "include", // Important for cookies
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-          }),
-        }
-      );
+      const res = await fetch(`${API_URL}/api/v1/auth/${!isRegister ? "register-restaurant" : "login"}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // Add CORS headers if needed
+        },
+        credentials: "include", // Important for cookies
+        body: JSON.stringify(bodyData),
+      });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(
@@ -56,8 +85,6 @@ function Auth() {
       }
       const data = await res.json();
       console.log("success", data);
-
-      alert("Signup successful!");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -72,11 +99,14 @@ function Auth() {
   return (
     <>
       <div className="flex flex-col items-center justify-center min-h-screen  bg-white/10 ">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-center">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-4 text-center"
+        >
           <h1 className="text-5xl f font-bold mb-7 mt-[60px]">
             {!isRegister ? "ลงทะเบียน" : "เข้าสู่ระบบ"}
           </h1>
-          {error && <h2 className="text-red-400 text-l">{error}</h2>}
+          {/* {error && <h2 className="text-red-400 text-l">{error}</h2>} */}
           {!isRegister && (
             <input
               type="text"
@@ -99,7 +129,7 @@ function Auth() {
           />
           <div className="relative w-80">
             <input
-              type={showPassword ? "text":"password"}
+              type={showPassword ? "text" : "password"}
               name="password"
               placeholder="รหัสผ่าน"
               value={formData.password}
@@ -112,7 +142,7 @@ function Auth() {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
             >
-              {showPassword ?  <Eye size={18} /> : <EyeOff size={18} />}
+              {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
             </button>
           </div>
 
@@ -125,6 +155,40 @@ function Auth() {
               onChange={handleChange}
               required
               pattern="[0-9]{10}"
+              className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+            />
+          )}
+          {!isRegister && (
+            <input
+              type="text"
+              name="restaurantName"
+              placeholder="ชื่อร้านอาหาร"
+              value={formData.restaurantName}
+              onChange={handleChange}
+              required
+              className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+            />
+          )}
+          {!isRegister && (
+            <input
+              type="tel"
+              name="restaurantPhone"
+              placeholder="0xx-xxx-xxxx"
+              value={formData.restaurantPhone}
+              onChange={handleChange}
+              required
+              pattern="[0-9]{10}"
+              className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+            />
+          )}
+          {!isRegister && (
+            <input
+              type="text"
+              name="restaurantAddress"
+              placeholder="บ้านเลขที่ / ถนน / แขวง / เขต / จังหวัด"
+              value={formData.restaurantAddress}
+              onChange={handleChange}
+              required
               className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
             />
           )}
