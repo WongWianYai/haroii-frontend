@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { API_URL } from "@/config";
 import { Eye, EyeOff } from "lucide-react";
 
+
 import Link from "next/link";
 import { register } from "module";
 
@@ -17,6 +18,7 @@ interface FormData {
   restaurantName: string;
   restaurantPhone: string;
   restaurantAddress: string;
+  rememberMe : boolean
 }
 
 function Auth() {
@@ -28,30 +30,21 @@ function Auth() {
     restaurantName: "",
     restaurantPhone: "",
     restaurantAddress: "",
+    rememberMe:false
   });
-  const [isRegister, setIsRegister] = useState(false);
+  const [isRegister, setIsRegister] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const dataBody = {
-    email: formData.email,
-    password: formData.password,
 
-    ...(!isRegister
-      ? {
-          phone: formData.phone,
-          password: formData.password,
-          restaurantName: formData.restaurantName,
-          restaurantPhone: formData.restaurantPhone,
-          restaurantAddress: formData.restaurantAddress,
-        }
-      : {}),
-  };
+
 
   const bodyData = {
     email: formData.email,
     password: formData.password,
-    ...(isRegister
+    rememberMe: formData.rememberMe,
+    
+    ...(!isRegister
       ? {
           name: formData.name,
           phone: formData.phone,
@@ -85,6 +78,7 @@ function Auth() {
       }
       const data = await res.json();
       console.log("success", data);
+      
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -92,9 +86,15 @@ function Auth() {
     }
   };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+  
+  
+    const handleCheckbox = (checked: boolean) => {
+    setFormData({ ...formData, rememberMe:checked});
+  }
+
 
   return (
     <>
@@ -199,7 +199,7 @@ function Auth() {
           {isRegister && (
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <Checkbox id="terms" />
+                <Checkbox id = "terms" name="rememberMe" checked = {formData.rememberMe} onCheckedChange={handleCheckbox} />
                 <Label htmlFor="terms">จำการเข้าสู่ระบบ</Label>
               </div>
               {/* <span className="text-gray-900 hover:underline cursor-pointer text-l ">
@@ -218,7 +218,7 @@ function Auth() {
               onClick={() => setIsRegister(!isRegister)}
             >
               {!isRegister ? (
-                <Button variant="link">เข้าสู่ระบบ</Button>
+               <Button variant="link"  >เข้าสู่ระบบ</Button>
               ) : (
                 <Button variant="link">ลงทะเบียน</Button>
               )}
