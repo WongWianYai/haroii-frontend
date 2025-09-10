@@ -1,5 +1,5 @@
 "use client";
-import React, { ChangeEvent, FormEvent, useState } from "react";
+import React, { ChangeEvent, FormEvent, useState ,createContext, ReactNode , useContext} from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { Eye, EyeOff } from "lucide-react";
 import {useRouter} from "next/navigation";
 import Link from "next/link";
 import { register } from "module";
+import MenuManagement from "./MenuManagement/page";
 
 interface FormData {
   name: string;
@@ -21,9 +22,16 @@ interface FormData {
   restaurantAddress: string;
   rememberMe : boolean
 }
+// interface AuthContextType {
+//   token: string | null;
+//   setToken: (token: string) => void;
+// }
 
-function Auth() {
+//   const AuthContext = createContext< AuthContextType| null >(null);
+function Auth () {
+  // const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
+  
   const [formData, setFormData] = useState<FormData>({
     name: "",
     phone: "",
@@ -80,7 +88,12 @@ function Auth() {
       }
       const data = await res.json();
       console.log("success", data);
-      router.push("/MenuManagement");
+      if(isRegister){
+        router.push("/MenuManagement");
+      }else{
+        setIsRegister(!isRegister);
+      }
+
       
     } catch (err: any) {
       setError(err.message);
@@ -100,7 +113,7 @@ function Auth() {
 
 
   return (
-    <>
+    < >
       <div className="flex flex-col items-center justify-center min-h-screen  bg-white/10 ">
         <form
           onSubmit={handleSubmit}
@@ -229,8 +242,15 @@ function Auth() {
           </div>
         </form>
       </div>
+     
+    
     </>
   );
 }
 
 export default Auth;
+// export const useForm = () => {
+//   const context = useContext(AuthContext);
+//   if (!context) throw new Error("useForm must be used within FormProvider");
+//   return context;
+// };
