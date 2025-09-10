@@ -7,6 +7,7 @@ import { API_URL } from "@/config";
 import { Eye, EyeOff } from "lucide-react";
 
 
+import {useRouter} from "next/navigation";
 import Link from "next/link";
 import { register } from "module";
 
@@ -22,6 +23,7 @@ interface FormData {
 }
 
 function Auth() {
+  const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     name: "",
     phone: "",
@@ -78,6 +80,7 @@ function Auth() {
       }
       const data = await res.json();
       console.log("success", data);
+      router.push("/MenuManagement");
       
     } catch (err: any) {
       setError(err.message);
