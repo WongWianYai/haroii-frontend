@@ -2,6 +2,16 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { API_URL } from "@/config";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuIndicator,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  NavigationMenuViewport,
+} from "@/components/ui/navigation-menu"
 // import { useForm } from "../Auth";
 import {
   DropdownMenu,
@@ -10,7 +20,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  DropdownMenuShortcut,
+  DropdownMenuGroup,
+} from "@/components/ui/dropdown-menu"
 import { Wrench } from "lucide-react";
 
 interface MenuItem {
@@ -74,28 +86,66 @@ function MenuManagement() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">Haroii</h1>
+        <header className="w-full w-full bg-[#F38DA9] px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">  
+                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold">
+                    CS
+                </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button className= "flex items-center gap-1 font-medium bg-[#F38DA9] text-white hover:bg-[#e37795]">
+                            ร้านอาหารเช้าเชฟไทน์
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="start">
+                        <DropdownMenuLabel>ครัวคุณไทน์</DropdownMenuLabel>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem>
+                                การตั้งค่าบัญชี
+                                <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                                การจ่ายเงิน
+                                <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                                การตั้งค่า
+                                <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuItem>
+                            ออกจากระบบ
+                            <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+                <NavigationMenu>
+                    <NavigationMenuList>
+                        <NavigationMenuItem>
+                            <NavigationMenuLink onSelect= {() => setActiveTab("menu")}>จัดการรายการอาหาร</NavigationMenuLink>
+                        </NavigationMenuItem>
+                        <NavigationMenuItem>
+                            <NavigationMenuLink onSelect= {() => setActiveTab("restaurant")}>ร้านอาหาร</NavigationMenuLink>
+                        </NavigationMenuItem>
+                        <NavigationMenuItem>
+                            <NavigationMenuLink>รายงาน</NavigationMenuLink>
+                        </NavigationMenuItem>
+                        <NavigationMenuItem>
+                            <NavigationMenuLink>จัดการร้านอาหาร</NavigationMenuLink>
+                        </NavigationMenuItem>
+                        <NavigationMenuItem>
+                            <NavigationMenuLink>บัญชี</NavigationMenuLink>
+                        </NavigationMenuItem>
+                    </NavigationMenuList>
+                </NavigationMenu>
+
+                <div className="text-xl font-bold text-white" style={{ fontFamily: '"IBM Plex Mono", monospace' }}>Haroii.</div>
+            </div>
+
+        </header>
       <div className="flex gap-4 mb-6">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="p-2 rounded bg-gray-200 hover:bg-gray-300">
-              {/* Hamburger Icon SVG */}
-              <svg width="24" height="24" viewBox="0 0 24 24">
-                <rect y="4" width="24" height="2" rx="1" fill="black" />
-                <rect y="11" width="24" height="2" rx="1" fill="black" />
-                <rect y="18" width="24" height="2" rx="1" fill="black" />
-              </svg>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onSelect={() => setActiveTab("menu")}>
-              Menu Items
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => setActiveTab("restaurant")}>
-              Restaurant Information
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        
       </div>
       <div className="w-full max-w-3xl bg-white rounded shadow p-6">
         {activeTab === "menu" ? (
@@ -116,7 +166,11 @@ function MenuManagement() {
                 </tr>
               ))}
             </tbody>
+            <div className="flex flex-wrap items-center gap-2 md:flex-row justify-end">
+                <Button>Add</Button>
+            </div>
           </table>
+          
         ) : (
           <div>
             <div className="flex justify-between items-center mb-4">
