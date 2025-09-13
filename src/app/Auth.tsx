@@ -1,13 +1,19 @@
 "use client";
-import React, { ChangeEvent, FormEvent, useState ,createContext, ReactNode , useContext} from "react";
+import React, {
+  ChangeEvent,
+  FormEvent,
+  useState,
+  createContext,
+  ReactNode,
+  useContext,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { API_URL } from "@/config";
 import { Eye, EyeOff } from "lucide-react";
 
-
-import {useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { register } from "module";
 import MenuManagement from "./MenuManagement/page";
@@ -20,7 +26,12 @@ interface FormData {
   restaurantName: string;
   restaurantPhone: string;
   restaurantAddress: string;
-  rememberMe : boolean
+  rememberMe: boolean;
+  type: string;
+  openingHours: {
+    openTime: string;
+    closeTime: string;
+  };
 }
 // interface AuthContextType {
 //   token: string | null;
@@ -28,10 +39,10 @@ interface FormData {
 // }
 
 //   const AuthContext = createContext< AuthContextType| null >(null);
-function Auth () {
+function Auth() {
   // const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
-  
+
   const [formData, setFormData] = useState<FormData>({
     name: "",
     phone: "",
@@ -40,20 +51,23 @@ function Auth () {
     restaurantName: "",
     restaurantPhone: "",
     restaurantAddress: "",
-    rememberMe:false
+    rememberMe: false,
+    type: "",
+    openingHours: {
+      openTime: "",
+      closeTime: "",
+    },
   });
   const [isRegister, setIsRegister] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-
-
   const bodyData = {
     email: formData.email,
     password: formData.password,
     rememberMe: formData.rememberMe,
-    
+
     ...(!isRegister
       ? {
           name: formData.name,
@@ -61,6 +75,9 @@ function Auth () {
           restaurantName: formData.restaurantName,
           restaurantPhone: formData.restaurantPhone,
           restaurantAddress: formData.restaurantAddress,
+          restaurantType: formData.type,
+          openTime: formData.openingHours.openTime,
+          closeTime: formData.openingHours.closeTime,
         }
       : {}),
   };
@@ -71,15 +88,20 @@ function Auth () {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_URL}/api/v1/auth/${!isRegister ? "register-restaurant" : "login"}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          // Add CORS headers if needed
-        },
-        credentials: "include", // Important for cookies
-        body: JSON.stringify(bodyData),
-      });
+      const res = await fetch(
+        `${API_URL}/api/v1/auth/${
+          !isRegister ? "register-restaurant" : "login"
+        }`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // Add CORS headers if needed
+          },
+          credentials: "include", // Important for cookies
+          body: JSON.stringify(bodyData),
+        }
+      );
       if (!res.ok) {
         const err = await res.json();
         throw new Error(
@@ -88,13 +110,11 @@ function Auth () {
       }
       const data = await res.json();
       console.log("success", data);
-      if(isRegister){
+      if (isRegister) {
         router.push("/MenuManagement");
-      }else{
+      } else {
         setIsRegister(!isRegister);
       }
-
-      
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -105,16 +125,23 @@ function Auth () {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-  
-  
-    const handleCheckbox = (checked: boolean) => {
-    setFormData({ ...formData, rememberMe:checked});
-  }
+  const handleChangeTime = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      openingHours: {
+        ...formData.openingHours,
+        [e.target.name]: e.target.value,
+      },
+    });
+  };
 
+  const handleCheckbox = (checked: boolean) => {
+    setFormData({ ...formData, rememberMe: checked });
+  };
 
   return (
-    < >
-      <div className="flex flex-col items-center justify-center min-h-screen  bg-white/10 ">
+    <>
+      <div className="flex flex-col items-center justify-center min-h-screen min-w-screen  bg-white/10 ">
         <form
           onSubmit={handleSubmit}
           className="flex flex-col gap-4 text-center"
@@ -143,7 +170,7 @@ function Auth () {
             required
             className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
           />
-          <div className="relative w-80">
+          <div className="relative ">
             <input
               type={showPassword ? "text" : "password"}
               name="password"
@@ -151,12 +178,12 @@ function Auth () {
               value={formData.password}
               onChange={handleChange}
               required
-              className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5 w-full"
+              className="border border-gray-300 rounded px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-300 w-full"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
             >
               {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
             </button>
@@ -187,6 +214,43 @@ function Auth () {
           )}
           {!isRegister && (
             <input
+              type="text"
+              name="type"
+              placeholder="ประเภทร้านอาหาร"
+              value={formData.type}
+              onChange={handleChange}
+              required
+              className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+            />
+          )}
+
+          <div className="flex gap-1">
+            {!isRegister && (
+              <input
+                type="time"
+                name="openTime"
+                placeholder="เวลาเปิด"
+                value={formData.openingHours.openTime}
+                onChange={handleChangeTime}
+                required
+                className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 w-1/2 mb-1.5"
+              />
+            )}
+            {!isRegister && (
+              <input
+                type="time"
+                name="closeTime"
+                placeholder="เวลาปิด"
+                value={formData.openingHours.closeTime}
+                onChange={handleChangeTime}
+                required
+                className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 w-1/2 mb-1.5"
+              />
+            )}
+          </div>
+
+          {!isRegister && (
+            <input
               type="tel"
               name="restaurantPhone"
               placeholder="0xx-xxx-xxxx"
@@ -215,7 +279,12 @@ function Auth () {
           {isRegister && (
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <Checkbox id = "terms" name="rememberMe" checked = {formData.rememberMe} onCheckedChange={handleCheckbox} />
+                <Checkbox
+                  id="terms"
+                  name="rememberMe"
+                  checked={formData.rememberMe}
+                  onCheckedChange={handleCheckbox}
+                />
                 <Label htmlFor="terms">จำการเข้าสู่ระบบ</Label>
               </div>
               {/* <span className="text-gray-900 hover:underline cursor-pointer text-l ">
@@ -234,7 +303,7 @@ function Auth () {
               onClick={() => setIsRegister(!isRegister)}
             >
               {!isRegister ? (
-               <Button variant="link"  >เข้าสู่ระบบ</Button>
+                <Button variant="link">เข้าสู่ระบบ</Button>
               ) : (
                 <Button variant="link">ลงทะเบียน</Button>
               )}
@@ -242,15 +311,8 @@ function Auth () {
           </div>
         </form>
       </div>
-     
-    
     </>
   );
 }
 
 export default Auth;
-// export const useForm = () => {
-//   const context = useContext(AuthContext);
-//   if (!context) throw new Error("useForm must be used within FormProvider");
-//   return context;
-// };
