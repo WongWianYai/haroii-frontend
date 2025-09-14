@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { API_URL } from "@/config";
 
 interface MenuFormProps {
-  menu?: { _id: string; name: string; description: string; price: number; category: string };
+  menu?: { _id: string; name: string; description: string; price: number; category: string; isAvailable: boolean};
   onSuccess?: () => void;
   onClose: () => void;
 }
@@ -18,6 +18,7 @@ export default function MenuForm({ menu, onSuccess, onClose }: MenuFormProps) {
     price: menu?.price.toString() || "",
     category: menu?.category || "",
     image: null as File | null,
+    isAvailable: menu?.isAvailable ?? true,
   });
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function MenuForm({ menu, onSuccess, onClose }: MenuFormProps) {
         price: menu.price.toString(),
         category: menu.category,
         image: null,
+        isAvailable: menu.isAvailable,    
       });
     }
   }, [menu]);
@@ -48,6 +50,7 @@ export default function MenuForm({ menu, onSuccess, onClose }: MenuFormProps) {
       form.append("description", formData.description);
       form.append("price", formData.price);
       form.append("category", formData.category);
+      form.append("isAvailable", String(formData.isAvailable));
       if (formData.image) form.append("image", formData.image);
 
       const url = menu ? `${API_URL}/api/v1/menu/${menu._id}` : `${API_URL}/api/v1/menu`;
@@ -110,6 +113,18 @@ export default function MenuForm({ menu, onSuccess, onClose }: MenuFormProps) {
               name="category"
               value={formData.category}
               onChange={handleChange}
+            />
+          </div>
+          <div>
+            <Label htmlFor= "isAvailable">Availability</Label>
+            <input
+              id="isAvailable"
+              name="isAvailable"
+              type="checkbox"
+              checked={formData.isAvailable}
+              onChange={(e) =>
+                setFormData({ ...formData, isAvailable: e.target.checked })
+              }
             />
           </div>
           <div>

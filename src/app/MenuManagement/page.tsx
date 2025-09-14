@@ -25,6 +25,7 @@ interface MenuItem {
   price: number;
   description: string;
   category: string;
+  isAvailable: boolean;
 }
 
 interface Restaurant {
@@ -168,6 +169,8 @@ export default function MenuManagement() {
                   <th className="border px-4 py-2 text-left">Menus</th>
                   <th className="border px-4 py-2 text-left">Price</th>
                   <th className="border px-4 py-2 text-left">Description</th>
+                  <th className="border px-4 py-2 text-left">Categories</th>
+                  <th className="border px-4 py-2 text-left">Availability</th>
                   <th className="border px-4 py-2 text-left">Actions</th>
                 </tr>
               </thead>
@@ -177,6 +180,8 @@ export default function MenuManagement() {
                     <td className="border px-4 py-2">{item.name}</td>
                     <td className="border px-4 py-2">{item.price}</td>
                     <td className="border px-4 py-2">{item.description}</td>
+                    <td className= "border px-4 py-2">{item.category}</td>
+                    <td className= "border px-4 py-2">{item.isAvailable ? "Available" : "Out of Stock"}</td>
                     <td className="border px-4 py-2 flex gap-2">
                       <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>
                         <Edit className="w-4 h-4" />
