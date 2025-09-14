@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Wrench } from "lucide-react";
 import { Label } from "@radix-ui/react-label";
+import {Trash2, Edit } from "lucide-react";
 
 interface MenuItem {
   _id: string;
@@ -287,12 +288,12 @@ export default function MenuManagement() {
             <table className="w-full border-collapse text-sm md:text-base">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="border px-4 py-2 text-left">Menus</th>
-                  <th className="border px-4 py-2 text-left">Price</th>
-                  <th className="border px-4 py-2 text-left">Description</th>
-                  <th className="border px-4 py-2 text-left">Categories</th>
-                  <th className="border px-4 py-2 text-left">Availability</th>
-                  <th className="border px-4 py-2 text-left">Actions</th>
+                  <th className="border px-4 py-2 text-left">ชื่ออาหาร</th>
+                  <th className="border px-4 py-2 text-left">ราคา (บาท)</th>
+                  <th className="border px-4 py-2 text-left">คำอธิบาย</th>
+                  <th className="border px-4 py-2 text-left">หมวดหมู่</th>
+                  <th className="border px-4 py-2 text-left">สต๊อก</th>
+                  <th className="border px-4 py-2 text-left"></th>
                 </tr>
               </thead>
               <tbody>
@@ -302,7 +303,7 @@ export default function MenuManagement() {
                     <td className="border px-4 py-2">{item.price}</td>
                     <td className="border px-4 py-2">{item.description}</td>
                     <td className= "border px-4 py-2">{item.category}</td>
-                    <td className= "border px-4 py-2">{item.isAvailable ? "Available" : "Out of Stock"}</td>
+                    <td className= "border px-4 py-2">{item.isAvailable ? "มีอยู่" : "หมดสต๊อก"}</td>
                     <td className="border px-4 py-2 flex gap-2">
                       <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>
                         <Edit className="w-4 h-4" />
