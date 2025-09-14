@@ -37,6 +37,13 @@ interface Restaurant {
   name: string;
   phone: string;
   address: string;
+  type:string;
+ 
+    openTime: string;
+  closeTime:string;
+
+  
+  
 }
 interface User {
   name: string;
@@ -63,11 +70,26 @@ function MenuManagement() {
     name: "",
     phone: "",
     address: "",
+    type:"",
+
+           openTime:"",
+    closeTime:""
+
+    
+   
+    
+    
   });
   const [originalRestaurant, setOgRestaurant] = useState<Restaurant>({
     name: "",
     phone: "",
     address: "",
+    type:"",
+
+      
+      openTime:"",
+      closeTime:""
+    
   });
   const [originalOwner, setOgOwner] = useState<User>({
     name: "",
@@ -95,6 +117,7 @@ function MenuManagement() {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         const data: MeResponse = await res.json();
+        console.log(data)
         setRestaurant(data.restaurant);
         setOgRestaurant(data.restaurant);
         setOgOwner(data.user);
@@ -118,6 +141,12 @@ function MenuManagement() {
     });
   };
   const handleChangeRest = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRestaurant({
+      ...restaurant,
+      [e.target.name]: e.target.value,
+    });
+  };
+  const handleChangeRestTime = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRestaurant({
       ...restaurant,
       [e.target.name]: e.target.value,
@@ -355,7 +384,7 @@ function MenuManagement() {
 
             <div className="ml-[120px]">
                 <dl>
-                <dt className="mb-1.5 ">
+                <dt className="mb-1.5">
                   ชื่อร้านอาหาร
                 </dt>
                 <dd className="mb-1.5">
@@ -403,6 +432,65 @@ function MenuManagement() {
                   />
                 </dd>
               </dl>
+
+               <dl>
+                <dt className="mb-1.5">
+                  ประเภทร้านอาหาร
+                </dt>
+                <dd className="mb-1.5">
+                  <input
+                    type="text"
+                    name="type"
+                    value={restaurant.type}
+                    // value={}
+                    onChange={handleChangeRest}
+                    disabled={!isEdit}
+                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+                  />
+                </dd>
+              </dl>
+              <div className="flex gap-2">
+
+                  <dl>
+                <dt className="mb-1.5">
+                  เวลาเปิด
+                </dt>
+                <dd className="mb-1.5">
+                  <input
+                    type="time"
+                    name="openTime"
+                    value={restaurant.openTime}
+                    // value={}
+                    onChange={handleChangeRest}
+                    disabled={!isEdit}
+                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+                  />
+                </dd>
+              </dl>
+
+               <dl>
+                <dt className="mb-1.5">
+                  เวลาปิด
+                </dt>
+                <dd className="mb-1.5">
+                  <input
+                    type="time"
+                    name="closeTime"
+                    value={restaurant.closeTime}
+                    // value={}
+                    onChange={handleChangeRest}
+                    disabled={!isEdit}
+                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+                  />
+                </dd>
+              </dl>
+
+
+              </div>
+             
+
+
+
 
 
 
