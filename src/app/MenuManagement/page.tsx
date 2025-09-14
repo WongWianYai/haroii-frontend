@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Dispatch, SetStateAction } from "react";
 import { Button } from "@/components/ui/button";
 import { API_URL } from "@/config";
 import AddEditMenuForm from "@/components/menu/MenuForm"; // modal form
@@ -36,24 +36,25 @@ interface MenuItem {
 
 interface Restaurant {
   name: string;
-  phone: string;
-  address: string;
-  type:string;
- 
-    openTime: string;
-  closeTime:string;
-
+  slug: string;
+  phone?: string;
+  address?: string;
+  type: string;
+  owner?: string;
   
+    openTime: string;
+    closeTime: string;
   
 }
-interface User {
+
+interface Owner {
   name: string;
-  phone: string;
   email: string;
+  phone?: string;
 }
 
 interface MeResponse {
-  user: User;
+  user: Owner;
   restaurant: Restaurant;
 }
 
@@ -64,35 +65,33 @@ export default function MenuManagement() {
   const [error, setError] = useState<string | null>(null);
   const [restaurant, setRestaurant] = useState<Restaurant>({
     name: "",
+    slug: "",
     phone: "",
     address: "",
-    type:"",
-
-           openTime:"",
-    closeTime:""
-
-    
-   
-    
+    type: "",
+    owner: "",
+      openTime: "",
+      closeTime: ""
     
   });
   const [originalRestaurant, setOgRestaurant] = useState<Restaurant>({
     name: "",
+    slug: "",
     phone: "",
     address: "",
-    type:"",
+    type: "",
+    owner: "",
 
-      
-      openTime:"",
-      closeTime:""
+      openTime: "",
+      closeTime: ""
     
   });
-  const [originalOwner, setOgOwner] = useState<User>({
+  const [originalOwner, setOgOwner] = useState<Owner>({
     name: "",
     phone: "",
     email: "",
   });
-  const [owner, setOwner] = useState<User>({
+  const [owner, setOwner] = useState<Owner>({
     name: "",
     phone: "",
     email: "",
@@ -184,52 +183,40 @@ export default function MenuManagement() {
     });
   };
 
+  const updateData = async (
+    url: string,
+    payload: any,
+    setState: Dispatch<SetStateAction<any>>
+  ): Promise<void> => {
+    try {
+      const res = await fetch(`${API_URL}${url}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Failed to update");
+
+      // ใช้ type assertion เพื่อให้ TypeScript เข้าใจว่า data = T
+      const data = await res.json();
+      console.log("Updated successfully:", data);
+      setState(data);
+    } catch (err) {
+      console.error("Error updating:", err);
+      alert("Error updating data");
+    }
+  };
+
   const handleDiscardBtn = () => {
     setOwner(originalOwner);
     setRestaurant(originalRestaurant);
   };
 
-  const handleSaveBtn = async () => {
-    try {
-  
-      const res = await fetch(`${API_URL}/api/v1/auth/restaurant/me`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(restaurant),
-      });
-
-      if (!res.ok) throw new Error("Failed to update");
-
-      const data = await res.json();
-      console.log("Updated successfully:", data);
-      setOgRestaurant(data);
-      
-    } catch (err) {
-      console.error("Error updating:", err);
-      alert("Error updating data");
-    }
-
-      try {
-      const res = await fetch(`${API_URL}/api/v1/auth/me`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(owner),
-      });
-
-      if (!res.ok) throw new Error("Failed to update");
-
-      const data = await res.json();
-      console.log("Updated successfully:", data);
-      setOgOwner(data);
-    
-
-    } catch (err) {
-      console.error("Error updating:", err);
-      alert("Error updating data");
-    }
-      setEdit(!isEdit);
+  const handleUpdate = async () => {
+    await updateData("/api/v1/auth/restaurant/me", restaurant, setOgRestaurant);
+    await updateData("/api/v1/auth/me", owner, setOgOwner);
+    setEdit(!isEdit);
   };
 
   return (
@@ -241,11 +228,11 @@ export default function MenuManagement() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button className="flex items-center gap-1 font-medium bg-[#F38DA9] text-white hover:bg-[#e37795] text-sm md:text-base">
-                ร้านอาหารเช้าเชฟไทน์
+                {originalRestaurant.name}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="start">
-              <DropdownMenuLabel>ครัวคุณไทน์</DropdownMenuLabel>
+              <DropdownMenuLabel>{originalRestaurant.name}</DropdownMenuLabel>
               <DropdownMenuGroup>
                 <DropdownMenuItem>การตั้งค่าบัญชี</DropdownMenuItem>
                 <DropdownMenuItem>การจ่ายเงิน</DropdownMenuItem>
@@ -385,7 +372,7 @@ export default function MenuManagement() {
                   <input
                     type="text"
                     name="name"
-                    value={owner.name}
+                    value={owner?.name}
                     // value={}
                     onChange={handleChangeOwner}
                     disabled={!isEdit}
@@ -495,9 +482,9 @@ export default function MenuManagement() {
                   <input
                     type="time"
                     name="openTime"
-                    value={restaurant.openTime}
+                    value={restaurant.openTime }
                     // value={}
-                    onChange={handleChangeRest}
+                    onChange={handleChangeRestTime}
                     disabled={!isEdit}
                     className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
                   />
@@ -514,7 +501,7 @@ export default function MenuManagement() {
                     name="closeTime"
                     value={restaurant.closeTime}
                     // value={}
-                    onChange={handleChangeRest}
+                    onChange={handleChangeRestTime}
                     disabled={!isEdit}
                     className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
                   />
@@ -546,7 +533,7 @@ export default function MenuManagement() {
                   </Button>
                   <Button
                     className="bg-[#F38DA9] hover:bg-pink-400"
-                    onClick={handleSaveBtn}
+                    onClick={handleUpdate}
                   >
                     Save
                   </Button>

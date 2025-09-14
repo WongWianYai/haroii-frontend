@@ -144,7 +144,7 @@ function Auth() {
       <div className="flex flex-col items-center justify-center min-h-screen min-w-screen  bg-white/10 ">
         <form
           onSubmit={handleSubmit}
-          className="flex flex-col gap-4 text-center"
+          className="flex flex-col gap-4 text-center w-xl"
         >
           <h1 className="text-5xl f font-bold mb-7 mt-[60px]">
             {!isRegister ? "ลงทะเบียน" : "เข้าสู่ระบบ"}
