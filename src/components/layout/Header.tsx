@@ -1,87 +1,124 @@
-import { Button } from "@/components/ui/button";
 import {
-  NavigationMenu,
-  NavigationMenuList,
-  NavigationMenuItem,
-  NavigationMenuLink,
-} from "@/components/ui/navigation-menu";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-  DropdownMenuGroup,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+    DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
+import {
+    Menubar,
+    MenubarMenu,
+    MenubarTrigger,
+} from "@/components/ui/menubar";
+import {
+    Settings,
+    CreditCard,
+    Cog,
+    LogOut
+} from "lucide-react";
 import { TabType, Restaurant } from "@/types";
 
 interface HeaderProps {
-  restaurant: Restaurant;
-  activeTab: TabType;
-  onTabChange: (tab: TabType) => void;
+    restaurant: Restaurant;
+    activeTab: TabType;
+    onTabChange: (tab: TabType) => void;
 }
 
 export default function Header({ restaurant, activeTab, onTabChange }: HeaderProps) {
-  return (
-    <header className="w-full bg-[#F38DA9] px-4 py-2 flex flex-wrap items-center justify-between gap-2">
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold">
-          CS
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button className="flex items-center gap-1 font-medium bg-[#F38DA9] text-white hover:bg-[#e37795] text-sm md:text-base">
-              {restaurant.name}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="start">
-            <DropdownMenuLabel>{restaurant.name}</DropdownMenuLabel>
-            <DropdownMenuGroup>
-              <DropdownMenuItem>การตั้งค่าบัญชี</DropdownMenuItem>
-              <DropdownMenuItem>การจ่ายเงิน</DropdownMenuItem>
-              <DropdownMenuItem>การตั้งค่า</DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuItem>ออกจากระบบ</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+    return (
+        <header className="w-full bg-[#F38DA9] px-4 py-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center flex-shrink-0">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <div className="flex items-center gap-3 font-medium text-white hover:bg-white/10 text-sm md:text-base px-3 py-2 rounded-lg cursor-pointer transition-colors">
+                            <img
+                                src="https://avatar.iran.liara.run/public"
+                                alt="Profile Avatar"
+                                className="w-8 h-8 rounded-full object-cover border-2 border-white/20"
+                            />
+                            <span className="truncate max-w-32 md:max-w-none">
+                                {restaurant.name}
+                            </span>
+                        </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="start">
+                        <DropdownMenuLabel className="flex items-center gap-2">
+                            <img
+                                src="https://avatar.iran.liara.run/public"
+                                alt="Profile Avatar"
+                                className="w-6 h-6 rounded-full object-cover"
+                            />
+                            {restaurant.name}
+                        </DropdownMenuLabel>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem className="flex items-center gap-2">
+                                <Settings className="w-4 h-4" />
+                                การตั้งค่าบัญชี
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="flex items-center gap-2">
+                                <CreditCard className="w-4 h-4" />
+                                การจ่ายเงิน
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="flex items-center gap-2">
+                                <Cog className="w-4 h-4" />
+                                การตั้งค่า
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuItem className="flex items-center gap-2 text-red-600">
+                            <LogOut className="w-4 h-4" />
+                            ออกจากระบบ
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
 
-      <NavigationMenu className="order-3 w-full md:order-none md:w-auto">
-        <NavigationMenuList className="flex flex-col md:flex-row md:gap-4 w-full md:w-auto text-sm md:text-base">
-          <NavigationMenuItem>
-            <NavigationMenuLink 
-              className={`cursor-pointer ${activeTab === 'menu' ? 'font-bold' : ''}`}
-              onSelect={() => onTabChange("menu")}
-            >
-              จัดการรายการอาหาร
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-            <NavigationMenuLink 
-              className={`cursor-pointer ${activeTab === 'restaurant' ? 'font-bold' : ''}`}
-              onSelect={() => onTabChange("restaurant")}
-            >
-              ร้านอาหาร
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-            <NavigationMenuLink className="cursor-pointer">รายงาน</NavigationMenuLink>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-            <NavigationMenuLink className="cursor-pointer">จัดการร้านอาหาร</NavigationMenuLink>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-            <NavigationMenuLink className="cursor-pointer">บัญชี</NavigationMenuLink>
-          </NavigationMenuItem>
-        </NavigationMenuList>
-      </NavigationMenu>
+            <Menubar className="order-3 w-full md:order-none md:w-auto bg-transparent border-none p-0 h-auto space-x-2">
+                <MenubarMenu>
+                    <MenubarTrigger
+                        className={`cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm ${activeTab === 'menu' ? 'font-bold bg-white/20' : ''
+                            }`}
+                        onClick={() => onTabChange("menu")}
+                    >
+                        จัดการรายการอาหาร
+                    </MenubarTrigger>
+                </MenubarMenu>
 
-      <div 
-        className="text-lg md:text-xl font-bold text-white order-2 md:order-none" 
-        style={{ fontFamily: '"IBM Plex Mono", monospace' }}
-      >
-        {process.env.NEXT_PUBLIC_APP_NAME || "Haroii."}
-      </div>
-    </header>
-  );
+                <MenubarMenu>
+                    <MenubarTrigger
+                        className={`cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm ${activeTab === 'restaurant' ? 'font-bold bg-white/20' : ''
+                            }`}
+                        onClick={() => onTabChange("restaurant")}
+                    >
+                        ร้านอาหาร
+                    </MenubarTrigger>
+                </MenubarMenu>
+
+                <MenubarMenu>
+                    <MenubarTrigger className="cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm">
+                        รายงาน
+                    </MenubarTrigger>
+                </MenubarMenu>
+
+                <MenubarMenu>
+                    <MenubarTrigger className="cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm">
+                        จัดการร้านอาหาร
+                    </MenubarTrigger>
+                </MenubarMenu>
+
+                <MenubarMenu>
+                    <MenubarTrigger className="cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm">
+                        บัญชี
+                    </MenubarTrigger>
+                </MenubarMenu>
+            </Menubar>
+
+            <div
+                className="text-lg md:text-xl font-bold text-white order-2 md:order-none"
+                style={{ fontFamily: '"IBM Plex Mono", monospace' }}
+            >
+                {"Haroii."}
+            </div>
+        </header>
+    );
 }
