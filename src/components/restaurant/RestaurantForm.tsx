@@ -190,7 +190,7 @@ export default function RestaurantForm({
               ยกเลิก
             </Button>
             <Button
-              className="bg-[#F38DA9] hover:bg-pink-400"
+              className="bg-[#F38DA9] hover:bg-[#e37795]"
               onClick={onSave}
             >
               บันทึก

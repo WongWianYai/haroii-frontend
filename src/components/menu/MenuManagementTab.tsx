@@ -72,7 +72,12 @@ export default function MenuManagementTab({
       />
 
       <div className="flex justify-end mt-4">
-        <Button onClick={handleAddNew}>เพิ่มเมนูใหม่</Button>
+        <Button 
+          onClick={handleAddNew}
+          className="bg-[#F38DA9] hover:bg-[#e37795] text-white"
+        >
+          เพิ่มเมนูใหม่
+        </Button>
       </div>
 
       {showForm && (

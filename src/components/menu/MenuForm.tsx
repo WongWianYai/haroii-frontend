@@ -130,7 +130,12 @@ export default function MenuForm({ menu, onSuccess, onClose }: MenuFormProps) {
 
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="outline" onClick={onClose}>ยกเลิก</Button>
-          <Button onClick={handleSubmit}>{menu ? "แก้ไข" : "เพิ่ม"}</Button>
+          <Button 
+            onClick={handleSubmit}
+            className="bg-[#F38DA9] hover:bg-[#e37795] text-white"
+          >
+            {menu ? "แก้ไข" : "เพิ่ม"}
+          </Button>
         </div>
       </div>
     </>
