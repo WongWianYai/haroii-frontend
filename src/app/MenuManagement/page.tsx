@@ -157,7 +157,7 @@ export default function MenuManagement() {
         onTabChange={setActiveTab} 
       />
 
-      <div className="w-full max-w-4xl mx-auto bg-white rounded shadow p-6 mt-4">
+      <div className="w-full max-w-7xl mx-auto bg-white rounded shadow p-6 mt-4">
         {activeTab === "menu" ? (
           <MenuManagementTab 
             menuItems={menuItems} 

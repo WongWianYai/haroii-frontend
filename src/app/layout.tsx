@@ -7,7 +7,7 @@ import { IBM_Plex_Sans_Thai_Looped } from "next/font/google";
 
 const ibmThai = IBM_Plex_Sans_Thai_Looped({
   subsets: ["thai", "latin"],
-  weight: ["100","200","300","400","500","600","700"], // เลือกเท่าที่ใช้จริง เพื่อลดขนาด
+  weight: ["100", "200", "300", "400", "500", "600", "700"], // เลือกเท่าที่ใช้จริง เพื่อลดขนาด
   display: "swap",
 });
 
@@ -40,7 +40,7 @@ export default function RootLayout({
     <html lang="th" className={ibmThai.className} >
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-       
+
       >
         {children}
       </body>
