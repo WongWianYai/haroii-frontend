@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { API_URL } from "@/config";
+import { apiClient } from "@/lib/api";
 
 interface MenuFormProps {
   menu?: { _id: string; name: string; description: string; price: number; category: string; isAvailable: boolean};
@@ -53,16 +53,11 @@ export default function MenuForm({ menu, onSuccess, onClose }: MenuFormProps) {
       form.append("isAvailable", String(formData.isAvailable));
       if (formData.image) form.append("image", formData.image);
 
-      const url = menu ? `${API_URL}/api/v1/menu/${menu._id}` : `${API_URL}/api/v1/menu`;
-      const method = menu ? "PUT" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        body: form,
-        credentials: "include",
-      });
-
-      if (!res.ok) throw new Error("Failed to save menu");
+      if (menu) {
+        await apiClient.updateMenuItem(menu._id, form);
+      } else {
+        await apiClient.createMenuItem(form);
+      }
 
       if (onSuccess) onSuccess();
       onClose();
