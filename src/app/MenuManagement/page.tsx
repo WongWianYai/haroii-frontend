@@ -11,7 +11,7 @@ export default function MenuManagement() {
   const [loading, setLoading] = useState(true);
   const [isEdit, setIsEdit] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Restaurant and Owner state
   const [restaurant, setRestaurant] = useState<Restaurant>({
     name: "",
@@ -23,7 +23,7 @@ export default function MenuManagement() {
     openTime: "",
     closeTime: ""
   });
-  
+
   const [originalRestaurant, setOriginalRestaurant] = useState<Restaurant>({
     name: "",
     slug: "",
@@ -34,13 +34,13 @@ export default function MenuManagement() {
     openTime: "",
     closeTime: ""
   });
-  
+
   const [owner, setOwner] = useState<Owner>({
     name: "",
     phone: "",
     email: "",
   });
-  
+
   const [originalOwner, setOriginalOwner] = useState<Owner>({
     name: "",
     phone: "",
@@ -151,17 +151,17 @@ export default function MenuManagement() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header 
-        restaurant={originalRestaurant} 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab} 
+      <Header
+        restaurant={originalRestaurant}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
       />
 
       <div className="w-full max-w-7xl mx-auto bg-white rounded shadow p-6 mt-4">
         {activeTab === "menu" ? (
-          <MenuManagementTab 
-            menuItems={menuItems} 
-            onMenuItemsChange={fetchMenuItems} 
+          <MenuManagementTab
+            menuItems={menuItems}
+            onMenuItemsChange={fetchMenuItems}
           />
         ) : (
           <RestaurantForm
