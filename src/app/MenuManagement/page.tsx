@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState, Dispatch, SetStateAction } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { API_URL } from "@/config";
 import AddEditMenuForm from "@/components/menu/MenuForm"; // modal form
 import {
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Wrench } from "lucide-react";
 import { Label } from "@radix-ui/react-label";
-import {Trash2, Edit } from "lucide-react";
+import { Trash2, Edit } from "lucide-react";
 
 interface MenuItem {
   _id: string;
@@ -41,10 +42,10 @@ interface Restaurant {
   address?: string;
   type: string;
   owner?: string;
-  
-    openTime: string;
-    closeTime: string;
-  
+
+  openTime: string;
+  closeTime: string;
+
 }
 
 interface Owner {
@@ -70,9 +71,9 @@ export default function MenuManagement() {
     address: "",
     type: "",
     owner: "",
-      openTime: "",
-      closeTime: ""
-    
+    openTime: "",
+    closeTime: ""
+
   });
   const [originalRestaurant, setOgRestaurant] = useState<Restaurant>({
     name: "",
@@ -82,9 +83,9 @@ export default function MenuManagement() {
     type: "",
     owner: "",
 
-      openTime: "",
-      closeTime: ""
-    
+    openTime: "",
+    closeTime: ""
+
   });
   const [originalOwner, setOgOwner] = useState<Owner>({
     name: "",
@@ -98,6 +99,8 @@ export default function MenuManagement() {
   });
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [filteredMenuItems, setFilteredMenuItems] = useState<MenuItem[]>([]);
+  const [searchCategory, setSearchCategory] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingMenu, setEditingMenu] = useState<MenuItem | null>(null);
 
@@ -110,6 +113,7 @@ export default function MenuManagement() {
       if (!res.ok) throw new Error("Failed to fetch menu items");
       const data = await res.json();
       setMenuItems(data);
+      setFilteredMenuItems(data);
     } catch (err) {
       console.error(err);
     }
@@ -219,6 +223,25 @@ export default function MenuManagement() {
     setEdit(!isEdit);
   };
 
+  // Search functionality
+  const handleSearchCategory = (searchTerm: string) => {
+    setSearchCategory(searchTerm);
+    if (searchTerm.trim() === "") {
+      setFilteredMenuItems(menuItems);
+    } else {
+      const filtered = menuItems.filter(item =>
+        item.category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredMenuItems(filtered);
+    }
+  };
+
+  // Get unique categories for suggestions
+  const getUniqueCategories = () => {
+    const categories = menuItems.map(item => item.category);
+    return [...new Set(categories)].filter(category => category.trim() !== "");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -272,6 +295,66 @@ export default function MenuManagement() {
       <div className="w-full max-w-3xl mx-auto bg-white rounded shadow p-6 mt-4">
         {activeTab === "menu" ? (
           <>
+            {/* Search Bar */}
+            <div className="mb-4 flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+              <Label htmlFor="categorySearch" className="text-sm font-medium">
+                ค้นหาตามหมวดหมู่:
+              </Label>
+              <div className="relative flex-1 max-w-md">
+                <Input
+                  id="categorySearch"
+                  type="text"
+                  placeholder="พิมพ์หมวดหมู่ที่ต้องการค้นหา..."
+                  value={searchCategory}
+                  onChange={(e) => handleSearchCategory(e.target.value)}
+                  className="w-full"
+                />
+                {searchCategory && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                    onClick={() => handleSearchCategory("")}
+                  >
+                    ×
+                  </Button>
+                )}
+              </div>
+              {searchCategory && (
+                <span className="text-sm text-gray-600">
+                  พบ {filteredMenuItems.length} รายการ
+                </span>
+              )}
+            </div>
+
+            {/* Category suggestions */}
+            {getUniqueCategories().length > 0 && (
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">หมวดหมู่ที่มีอยู่:</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={searchCategory === "" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleSearchCategory("")}
+                    className="text-xs"
+                  >
+                    ทั้งหมด ({menuItems.length})
+                  </Button>
+                  {getUniqueCategories().map((category) => (
+                    <Button
+                      key={category}
+                      variant={searchCategory === category ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleSearchCategory(category)}
+                      className="text-xs"
+                    >
+                      {category} ({menuItems.filter(item => item.category === category).length})
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <table className="w-full border-collapse text-sm md:text-base">
               <thead>
                 <tr className="bg-gray-100">
@@ -284,23 +367,34 @@ export default function MenuManagement() {
                 </tr>
               </thead>
               <tbody>
-                {menuItems.map((item) => (
-                  <tr key={item._id}>
-                    <td className="border px-4 py-2">{item.name}</td>
-                    <td className="border px-4 py-2">{item.price}</td>
-                    <td className="border px-4 py-2">{item.description}</td>
-                    <td className= "border px-4 py-2">{item.category}</td>
-                    <td className= "border px-4 py-2">{item.isAvailable ? "มีอยู่" : "หมดสต๊อก"}</td>
-                    <td className="border px-4 py-2 flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(item._id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                {filteredMenuItems.length > 0 ? (
+                  filteredMenuItems.map((item) => (
+                    <tr key={item._id}>
+                      <td className="border px-4 py-2">{item.name}</td>
+                      <td className="border px-4 py-2">{item.price}</td>
+                      <td className="border px-4 py-2">{item.description}</td>
+                      <td className="border px-4 py-2">{item.category}</td>
+                      <td className="border px-4 py-2">{item.isAvailable ? "มีอยู่" : "หมดสต๊อก"}</td>
+                      <td className="border px-4 py-2 flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDelete(item._id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="border px-4 py-8 text-center text-gray-500">
+                      {searchCategory
+                        ? `ไม่พบเมนูในหมวดหมู่ "${searchCategory}"`
+                        : "ไม่มีรายการเมนู"
+                      }
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
 
@@ -345,172 +439,171 @@ export default function MenuManagement() {
             <div className="pl-8">
               <div className="">
                 <h3 className="font-semibold mt-2 mb-2">ข้อมูลบัญชี : </h3>
-               <div className="ml-[120px]">
+                <div className="ml-[120px]">
 
-
-                   <dl>
-                <dt className="mb-1.5">
-                  อีเมล
-                </dt>
-                <dd className="mb-1.5">
-                  <input
-                    type="email"
-                    name="email"
-                    value={owner?.email}
-                    // value={}
-                    onChange={handleChangeOwner}
-                    disabled={!isEdit}
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
-                  />
-                </dd>
-              </dl>
-              <dl>
-                <dt className="mb-1.5">
-                 ชื่อเจ้าของร้าน
-                </dt>
-                <dd className="mb-1.5">
-                  <input
-                    type="text"
-                    name="name"
-                    value={owner?.name}
-                    // value={}
-                    onChange={handleChangeOwner}
-                    disabled={!isEdit}
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5 w-ful"
-                  />
-                </dd>
-              </dl>
-              <dl>
-                <dt className="mb-1.5">
-                  เบอร์โทรเจ้าของร้าน
-                </dt>
-                <dd className="mb-1.5">
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={owner.phone}
-                    // value={}
-                    onChange={handleChangeOwner}
-                    disabled={!isEdit}
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
-                  />
-                </dd>
-              </dl>
-               </div>
-
-
-              </div>
-            
-
-            <div>
-              <h3 className="font-semibold mt-2 mb-2">ข้อมูลร้านอาหาร : </h3>
-
-            <div className="ml-[120px]">
-                <dl>
-                <dt className="mb-1.5">
-                  ชื่อร้านอาหาร
-                </dt>
-                <dd className="mb-1.5">
-                  <input
-                    type="text"
-                    name="name"
-                    value={restaurant.name}
-                    // value={}
-                    onChange={handleChangeRest}
-                    disabled={!isEdit}
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
-                  />
-                </dd>
-              </dl>
-
-              <dl >
-                <dt className="mb-1.5">
-                  ที่อยู่ร้านอาหาร
-                </dt>
-                <dd className="mb-1.5">
-                  <input
-                    type="text"
-                    name="address"
-                    value={restaurant.address}
-                    // value={}
-                    onChange={handleChangeRest}
-                    disabled={!isEdit}
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
-                  />
-                </dd>
-              </dl>
-              <dl>
-                <dt className="mb-1.5">
-                  เบอร์โทรร้านอาหาร
-                </dt>
-                <dd className="mb-1.5">
-                  <input
-                    type="text"
-                    name="phone"
-                    value={restaurant.phone}
-                    // value={}
-                    onChange={handleChangeRest}
-                    disabled={!isEdit}
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
-                  />
-                </dd>
-              </dl>
-
-               <dl>
-                <dt className="mb-1.5">
-                  ประเภทร้านอาหาร
-                </dt>
-                <dd className="mb-1.5">
-                  <input
-                    type="text"
-                    name="type"
-                    value={restaurant.type}
-                    // value={}
-                    onChange={handleChangeRest}
-                    disabled={!isEdit}
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
-                  />
-                </dd>
-              </dl>
-              <div className="flex gap-2">
 
                   <dl>
-                <dt className="mb-1.5">
-                  เวลาเปิด
-                </dt>
-                <dd className="mb-1.5">
-                  <input
-                    type="time"
-                    name="openTime"
-                    value={restaurant.openTime }
-                    // value={}
-                    onChange={handleChangeRestTime}
-                    disabled={!isEdit}
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
-                  />
-                </dd>
-              </dl>
-
-               <dl>
-                <dt className="mb-1.5">
-                  เวลาปิด
-                </dt>
-                <dd className="mb-1.5">
-                  <input
-                    type="time"
-                    name="closeTime"
-                    value={restaurant.closeTime}
-                    // value={}
-                    onChange={handleChangeRestTime}
-                    disabled={!isEdit}
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
-                  />
-                </dd>
-              </dl>
+                    <dt className="mb-1.5">
+                      อีเมล
+                    </dt>
+                    <dd className="mb-1.5">
+                      <input
+                        type="email"
+                        name="email"
+                        value={owner?.email}
+                        // value={}
+                        onChange={handleChangeOwner}
+                        disabled={!isEdit}
+                        className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+                      />
+                    </dd>
+                  </dl>
+                  <dl>
+                    <dt className="mb-1.5">
+                      ชื่อเจ้าของร้าน
+                    </dt>
+                    <dd className="mb-1.5">
+                      <input
+                        type="text"
+                        name="name"
+                        value={owner?.name}
+                        // value={}
+                        onChange={handleChangeOwner}
+                        disabled={!isEdit}
+                        className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5 w-ful"
+                      />
+                    </dd>
+                  </dl>
+                  <dl>
+                    <dt className="mb-1.5">
+                      เบอร์โทรเจ้าของร้าน
+                    </dt>
+                    <dd className="mb-1.5">
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={owner.phone}
+                        // value={}
+                        onChange={handleChangeOwner}
+                        disabled={!isEdit}
+                        className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+                      />
+                    </dd>
+                  </dl>
+                </div>
 
 
               </div>
-             
+
+
+              <div>
+                <h3 className="font-semibold mt-2 mb-2">ข้อมูลร้านอาหาร : </h3>
+
+                <div className="ml-[120px]">
+                  <dl>
+                    <dt className="mb-1.5">
+                      ชื่อร้านอาหาร
+                    </dt>
+                    <dd className="mb-1.5">
+                      <input
+                        type="text"
+                        name="name"
+                        value={restaurant.name}
+                        // value={}
+                        onChange={handleChangeRest}
+                        disabled={!isEdit}
+                        className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+                      />
+                    </dd>
+                  </dl>
+
+                  <dl >
+                    <dt className="mb-1.5">
+                      ที่อยู่ร้านอาหาร
+                    </dt>
+                    <dd className="mb-1.5">
+                      <input
+                        type="text"
+                        name="address"
+                        value={restaurant.address}
+                        // value={}
+                        onChange={handleChangeRest}
+                        disabled={!isEdit}
+                        className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+                      />
+                    </dd>
+                  </dl>
+                  <dl>
+                    <dt className="mb-1.5">
+                      เบอร์โทรร้านอาหาร
+                    </dt>
+                    <dd className="mb-1.5">
+                      <input
+                        type="text"
+                        name="phone"
+                        value={restaurant.phone}
+                        // value={}
+                        onChange={handleChangeRest}
+                        disabled={!isEdit}
+                        className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+                      />
+                    </dd>
+                  </dl>
+
+                  <dl>
+                    <dt className="mb-1.5">
+                      ประเภทร้านอาหาร
+                    </dt>
+                    <dd className="mb-1.5">
+                      <input
+                        type="text"
+                        name="type"
+                        value={restaurant.type}
+                        // value={}
+                        onChange={handleChangeRest}
+                        disabled={!isEdit}
+                        className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+                      />
+                    </dd>
+                  </dl>
+                  <div className="flex gap-2">
+
+                    <dl>
+                      <dt className="mb-1.5">
+                        เวลาเปิด
+                      </dt>
+                      <dd className="mb-1.5">
+                        <input
+                          type="time"
+                          name="openTime"
+                          value={restaurant.openTime}
+                          // value={}
+                          onChange={handleChangeRestTime}
+                          disabled={!isEdit}
+                          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+                        />
+                      </dd>
+                    </dl>
+
+                    <dl>
+                      <dt className="mb-1.5">
+                        เวลาปิด
+                      </dt>
+                      <dd className="mb-1.5">
+                        <input
+                          type="time"
+                          name="closeTime"
+                          value={restaurant.closeTime}
+                          // value={}
+                          onChange={handleChangeRestTime}
+                          disabled={!isEdit}
+                          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 mb-1.5"
+                        />
+                      </dd>
+                    </dl>
+
+
+                  </div>
 
 
 
@@ -518,10 +611,11 @@ export default function MenuManagement() {
 
 
 
-            </div>
-            
 
-            </div>
+                </div>
+
+
+              </div>
 
               {isEdit && (
                 <div className="flex items-center justify-end gap-4 mt-1">
