@@ -141,13 +141,13 @@ export default function MenuManagement() {
     );
   }
 
-  if (!restaurant.name) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-lg">ไม่พบข้อมูลร้านอาหาร</p>
-      </div>
-    );
-  }
+  // if (!restaurant.name) {
+  //   return (
+  //     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+  //       <p className="text-lg">ไม่พบข้อมูลร้านอาหาร</p>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-gray-50">
