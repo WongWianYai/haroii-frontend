@@ -120,7 +120,7 @@ class AuthApiClient {
             },
             restaurant: {
                 name: data.restaurantName,
-                type: data.restaurantType,
+                type: data.type,
                 address: data.address,
             },
         };

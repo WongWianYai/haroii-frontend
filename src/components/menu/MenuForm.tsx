@@ -151,7 +151,7 @@ export default function MenuForm({ menu, onSuccess, onClose }: MenuFormProps) {
                     name="category"
                     value={formData.category}
                     onChange={handleChange}
-                    placeholder="เช่น อาหารจานหลัก, ของหวาน"
+                    placeholder="เซ็ทอาหาร, อาหารจานเดียว, เครื่องดื่ม, ของหวาน, ของทานเล่น, ท็อปปิ้ง, อื่นๆ"
                     className="w-full"
                   />
                 </div>

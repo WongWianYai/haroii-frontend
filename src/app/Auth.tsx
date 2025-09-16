@@ -74,7 +74,7 @@ function Auth() {
       restaurantName: data.restaurantName,
       restaurantPhone: data.restaurantPhone,
       restaurantAddress: data.restaurantAddress,
-      restaurantType: data.type,
+      type: data.type,
       openTime: data.openingHours.openTime,
       closeTime: data.openingHours.closeTime,
     };
