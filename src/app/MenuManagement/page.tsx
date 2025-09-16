@@ -5,6 +5,7 @@ import { apiClient } from "@/lib/api";
 import Header from "@/components/layout/Header";
 import MenuManagementTab from "@/components/menu/MenuManagementTab";
 import RestaurantForm from "@/components/restaurant/RestaurantForm";
+import { API_URL } from "@/config";
 
 export default function MenuManagement() {
   const [activeTab, setActiveTab] = useState<TabType>("menu");
@@ -123,6 +124,10 @@ export default function MenuManagement() {
       console.error("Error fetching menu items:", err);
     }
   };
+
+  
+
+
 
   // Loading and error states
   if (loading) {

@@ -18,6 +18,9 @@ import {
     LogOut
 } from "lucide-react";
 import { TabType, Restaurant } from "@/types";
+import { useState } from "react";
+import { API_URL } from "@/config";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
     restaurant: Restaurant;
@@ -26,6 +29,36 @@ interface HeaderProps {
 }
 
 export default function Header({ restaurant, activeTab, onTabChange }: HeaderProps) {
+      const router = useRouter();
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+    const handleLogOut = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/auth/logout`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+             
+            });
+      
+            if (!res.ok) {
+              const err = await res.json();
+              throw new Error(err.message || "ออกจากระบบไม่สำเร็จ");
+            }
+      
+            const result = await res.json();
+            console.log("logout success", result);
+            router.push("/Auth");
+     
+          } catch (err: any) {
+            setError(err.message);
+          } finally {
+            setLoading(false);
+          }
+        };
+      
     return (
         <header className="w-full bg-[#F38DA9] px-4 py-2 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center flex-shrink-0">
@@ -65,8 +98,8 @@ export default function Header({ restaurant, activeTab, onTabChange }: HeaderPro
                                 การตั้งค่า
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
-                        <DropdownMenuItem className="flex items-center gap-2 text-red-600">
-                            <LogOut className="w-4 h-4" />
+                        <DropdownMenuItem onClick={handleLogOut} className="flex items-center gap-2 text-red-600">
+                            <LogOut onClick={handleLogOut} className="w-4 h-4" />
                             ออกจากระบบ
                         </DropdownMenuItem>
                     </DropdownMenuContent>
