@@ -48,7 +48,8 @@ const statusConfig = {
 };
 
 export default function OrderManagement() {
-    const [orders, setOrders] = useState<Order[]>([]);
+    const [allOrders, setAllOrders] = useState<Order[]>([]);
+    const [displayOrders, setDisplayOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [updatingOrder, setUpdatingOrder] = useState<string | null>(null);
@@ -60,15 +61,15 @@ export default function OrderManagement() {
             .split('; ')
             .find(row => row.startsWith('token='))
             ?.split('=')[1];
-        
+
         return token ? { Authorization: `Bearer ${token}` } : {};
     };
 
     const fetchOrders = async () => {
         try {
             setLoading(true);
-            const statusParam = selectedStatus !== "ALL" ? `?status=${selectedStatus}` : "";
-            const response = await fetch(`${API_URL}${API_BASE_PATH}/orders${statusParam}`, {
+            // Always fetch all orders for accurate counts
+            const response = await fetch(`${API_URL}${API_BASE_PATH}/orders`, {
                 credentials: "include",
                 headers: {
                     ...getAuthHeaders(),
@@ -80,7 +81,14 @@ export default function OrderManagement() {
             }
 
             const data = await response.json();
-            setOrders(data);
+            setAllOrders(data);
+
+            // Filter for display based on selected status
+            if (selectedStatus === "ALL") {
+                setDisplayOrders(data);
+            } else {
+                setDisplayOrders(data.filter((order: Order) => order.status === selectedStatus));
+            }
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -115,7 +123,16 @@ export default function OrderManagement() {
 
     useEffect(() => {
         fetchOrders();
-    }, [selectedStatus]);
+    }, []);
+
+    // Update display orders when status filter changes
+    useEffect(() => {
+        if (selectedStatus === "ALL") {
+            setDisplayOrders(allOrders);
+        } else {
+            setDisplayOrders(allOrders.filter(order => order.status === selectedStatus));
+        }
+    }, [selectedStatus, allOrders]);
 
     const formatTime = (dateString: string) => {
         return new Date(dateString).toLocaleTimeString("th-TH", {
@@ -132,9 +149,8 @@ export default function OrderManagement() {
         });
     };
 
-    const filteredOrders = orders.filter(order =>
-        selectedStatus === "ALL" || order.status === selectedStatus
-    );
+    // Use displayOrders instead of filtering again
+    const filteredOrders = displayOrders;
 
     if (loading) {
         return (
@@ -177,10 +193,10 @@ export default function OrderManagement() {
                     onClick={() => setSelectedStatus("ALL")}
                     className={selectedStatus === "ALL" ? "bg-[#F38DA9] hover:bg-[#e37795]" : ""}
                 >
-                    ทั้งหมด ({orders.length})
+                    ทั้งหมด ({allOrders.length})
                 </Button>
                 {Object.entries(statusConfig).map(([status, config]) => {
-                    const count = orders.filter(order => order.status === status).length;
+                    const count = allOrders.filter(order => order.status === status).length;
                     return (
                         <Button
                             key={status}
