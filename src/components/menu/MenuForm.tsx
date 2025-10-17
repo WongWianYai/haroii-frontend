@@ -18,12 +18,29 @@ import {
   Plus
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface MenuFormProps {
   menu?: { _id: string; name: string; description: string; price: number; category: string; isAvailable: boolean };
   onSuccess?: () => void;
   onClose: () => void;
 }
+
+const MENU_CATEGORIES = [
+  "เซ็ทอาหาร",
+  "อาหารจานเดียว",
+  "เครื่องดื่ม",
+  "ของหวาน",
+  "ของทานเล่น",
+  "ท็อปปิ้ง",
+  "อื่นๆ"
+] as const;
 
 export default function MenuForm({ menu, onSuccess, onClose }: MenuFormProps) {
   const [formData, setFormData] = useState({
@@ -80,7 +97,9 @@ export default function MenuForm({ menu, onSuccess, onClose }: MenuFormProps) {
       alert("เกิดข้อผิดพลาดในการบันทึกเมนู");
     }
   };
-
+  const handleSelectChange = (value: string) => {
+    setFormData({ ...formData, category: value });
+  };
   return (
     <>
       {/* Overlay */}
@@ -146,14 +165,21 @@ export default function MenuForm({ menu, onSuccess, onClose }: MenuFormProps) {
                     <Tag className="w-4 h-4 text-gray-500" />
                     หมวดหมู่
                   </Label>
-                  <Input
-                    id="category"
-                    name="category"
+                  <Select
                     value={formData.category}
-                    onChange={handleChange}
-                    placeholder="เซ็ทอาหาร, อาหารจานเดียว, เครื่องดื่ม, ของหวาน, ของทานเล่น, ท็อปปิ้ง, อื่นๆ"
-                    className="w-full"
-                  />
+                    onValueChange={handleSelectChange}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="เลือกหมวดหมู่" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MENU_CATEGORIES.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
