@@ -55,4 +55,12 @@ export interface Order {
   status: OrderStatus;
   createdAt: string;
   updatedAt: string;
+  tableNo?: string; // Add table number field
+}
+
+export interface TableSession {
+  _id: string;
+  tableNo: string;
+  restaurantId: string;
+  expiresAt: string;
 }

@@ -12,7 +12,8 @@ import {
     Utensils,
     RefreshCw,
     StickyNote,
-    Calendar
+    Calendar,
+    Hash
 } from "lucide-react";
 import { API_URL, API_BASE_PATH } from "@/config";
 
@@ -65,6 +66,25 @@ export default function OrderManagement() {
         return token ? { Authorization: `Bearer ${token}` } : {};
     };
 
+    const fetchTableNumber = async (tableSessionId: string): Promise<string> => {
+        try {
+            const response = await fetch(`${API_URL}${API_BASE_PATH}/table-sessions/${tableSessionId}`, {
+                credentials: "include",
+                headers: {
+                    ...getAuthHeaders(),
+                },
+            });
+
+            if (response.ok) {
+                const session = await response.json();
+                return session.tableNo || "N/A";
+            }
+        } catch (err) {
+            console.error("Failed to fetch table number:", err);
+        }
+        return "N/A";
+    };
+
     const fetchOrders = async () => {
         try {
             setLoading(true);
@@ -81,13 +101,22 @@ export default function OrderManagement() {
             }
 
             const data = await response.json();
-            setAllOrders(data);
+
+            // Fetch table numbers for each order
+            const ordersWithTableNumbers = await Promise.all(
+                data.map(async (order: Order) => {
+                    const tableNo = await fetchTableNumber(order.tableSessionId);
+                    return { ...order, tableNo };
+                })
+            );
+
+            setAllOrders(ordersWithTableNumbers);
 
             // Filter for display based on selected status
             if (selectedStatus === "ALL") {
-                setDisplayOrders(data);
+                setDisplayOrders(ordersWithTableNumbers);
             } else {
-                setDisplayOrders(data.filter((order: Order) => order.status === selectedStatus));
+                setDisplayOrders(ordersWithTableNumbers.filter((order: Order) => order.status === selectedStatus));
             }
         } catch (err: any) {
             setError(err.message);
@@ -228,9 +257,15 @@ export default function OrderManagement() {
                         <Card key={order._id} className="hover:shadow-md transition-shadow">
                             <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
-                                    <CardTitle className="text-sm font-medium">
-                                        ออเดอร์ #{order._id.slice(-6)}
-                                    </CardTitle>
+                                    <div className="flex flex-col">
+                                        <CardTitle className="text-sm font-medium">
+                                            ออเดอร์ #{order._id.slice(-6)}
+                                        </CardTitle>
+                                        <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                                            <Hash className="w-3 h-3" />
+                                            โต๊ะ {order.tableNo || "N/A"}
+                                        </div>
+                                    </div>
                                     <Badge className={`${config.color} flex items-center gap-1`}>
                                         <StatusIcon className="w-3 h-3" />
                                         {config.label}
