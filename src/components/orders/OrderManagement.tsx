@@ -55,6 +55,7 @@ export default function OrderManagement() {
     const [error, setError] = useState<string | null>(null);
     const [updatingOrder, setUpdatingOrder] = useState<string | null>(null);
     const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "ALL">("ALL");
+    const [selectedTable, setSelectedTable] = useState<string>("ALL");
 
     const getAuthHeaders = () => {
         // Get token from cookies
@@ -154,14 +155,22 @@ export default function OrderManagement() {
         fetchOrders();
     }, []);
 
-    // Update display orders when status filter changes
+    // Update display orders when filters change
     useEffect(() => {
-        if (selectedStatus === "ALL") {
-            setDisplayOrders(allOrders);
-        } else {
-            setDisplayOrders(allOrders.filter(order => order.status === selectedStatus));
+        let filtered = allOrders;
+        
+        // Filter by status
+        if (selectedStatus !== "ALL") {
+            filtered = filtered.filter(order => order.status === selectedStatus);
         }
-    }, [selectedStatus, allOrders]);
+        
+        // Filter by table
+        if (selectedTable !== "ALL") {
+            filtered = filtered.filter(order => order.tableNo === selectedTable);
+        }
+        
+        setDisplayOrders(filtered);
+    }, [selectedStatus, selectedTable, allOrders]);
 
     const formatTime = (dateString: string) => {
         return new Date(dateString).toLocaleTimeString("th-TH", {
@@ -203,6 +212,17 @@ export default function OrderManagement() {
 
                 <div className="flex items-center gap-2">
                     <Button
+                        onClick={() => {
+                            setSelectedStatus("ALL");
+                            setSelectedTable("ALL");
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                    >
+                        ล้างตัวกรอง
+                    </Button>
+                    <Button
                         onClick={fetchOrders}
                         variant="outline"
                         size="sm"
@@ -214,30 +234,67 @@ export default function OrderManagement() {
                 </div>
             </div>
 
-            {/* Status Filter */}
-            <div className="flex flex-wrap gap-2">
-                <Button
-                    variant={selectedStatus === "ALL" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedStatus("ALL")}
-                    className={selectedStatus === "ALL" ? "bg-[#F38DA9] hover:bg-[#e37795]" : ""}
-                >
-                    ทั้งหมด ({allOrders.length})
-                </Button>
-                {Object.entries(statusConfig).map(([status, config]) => {
-                    const count = allOrders.filter(order => order.status === status).length;
-                    return (
+            {/* Filters */}
+            <div className="space-y-4">
+                {/* Status Filter */}
+                <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">กรองตามสถานะ</h3>
+                    <div className="flex flex-wrap gap-2">
                         <Button
-                            key={status}
-                            variant={selectedStatus === status ? "default" : "outline"}
+                            variant={selectedStatus === "ALL" ? "default" : "outline"}
                             size="sm"
-                            onClick={() => setSelectedStatus(status as OrderStatus)}
-                            className={selectedStatus === status ? "bg-[#F38DA9] hover:bg-[#e37795]" : ""}
+                            onClick={() => setSelectedStatus("ALL")}
+                            className={selectedStatus === "ALL" ? "bg-[#F38DA9] hover:bg-[#e37795]" : ""}
                         >
-                            {config.label} ({count})
+                            ทั้งหมด ({allOrders.length})
                         </Button>
-                    );
-                })}
+                        {Object.entries(statusConfig).map(([status, config]) => {
+                            const count = allOrders.filter(order => order.status === status).length;
+                            return (
+                                <Button
+                                    key={status}
+                                    variant={selectedStatus === status ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setSelectedStatus(status as OrderStatus)}
+                                    className={selectedStatus === status ? "bg-[#F38DA9] hover:bg-[#e37795]" : ""}
+                                >
+                                    {config.label} ({count})
+                                </Button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Table Filter */}
+                <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">กรองตามโต๊ะ</h3>
+                    <div className="flex flex-wrap gap-2">
+                        <Button
+                            variant={selectedTable === "ALL" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setSelectedTable("ALL")}
+                            className={selectedTable === "ALL" ? "bg-[#F38DA9] hover:bg-[#e37795]" : ""}
+                        >
+                            ทุกโต๊ะ ({allOrders.length})
+                        </Button>
+                        {Array.from(new Set(allOrders.map(order => order.tableNo).filter(Boolean)))
+                            .sort()
+                            .map((tableNo) => {
+                                const count = allOrders.filter(order => order.tableNo === tableNo).length;
+                                return (
+                                    <Button
+                                        key={tableNo}
+                                        variant={selectedTable === tableNo ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setSelectedTable(tableNo!)}
+                                        className={selectedTable === tableNo ? "bg-[#F38DA9] hover:bg-[#e37795]" : ""}
+                                    >
+                                        โต๊ะ {tableNo} ({count})
+                                    </Button>
+                                );
+                            })}
+                    </div>
+                </div>
             </div>
 
             {/* Error Display */}
@@ -341,9 +398,13 @@ export default function OrderManagement() {
                     <Utensils className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">ไม่มีออเดอร์</h3>
                     <p className="text-gray-500">
-                        {selectedStatus === "ALL"
+                        {selectedStatus === "ALL" && selectedTable === "ALL"
                             ? "ยังไม่มีออเดอร์เข้ามาในระบบ"
-                            : `ไม่มีออเดอร์ที่มีสถานะ "${statusConfig[selectedStatus as OrderStatus]?.label}"`
+                            : `ไม่มีออเดอร์ที่ตรงกับตัวกรอง${
+                                selectedStatus !== "ALL" ? ` สถานะ: ${statusConfig[selectedStatus as OrderStatus]?.label}` : ""
+                            }${
+                                selectedTable !== "ALL" ? ` โต๊ะ: ${selectedTable}` : ""
+                            }`
                         }
                     </p>
                 </div>
