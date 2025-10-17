@@ -111,13 +111,18 @@ export default function OrderManagement() {
                 })
             );
 
-            setAllOrders(ordersWithTableNumbers);
+            // Sort orders by creation time (oldest first)
+            const sortedOrders = ordersWithTableNumbers.sort((a, b) =>
+                new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            );
+
+            setAllOrders(sortedOrders);
 
             // Filter for display based on selected status
             if (selectedStatus === "ALL") {
-                setDisplayOrders(ordersWithTableNumbers);
+                setDisplayOrders(sortedOrders);
             } else {
-                setDisplayOrders(ordersWithTableNumbers.filter((order: Order) => order.status === selectedStatus));
+                setDisplayOrders(sortedOrders.filter((order: Order) => order.status === selectedStatus));
             }
         } catch (err: any) {
             setError(err.message);
@@ -158,18 +163,23 @@ export default function OrderManagement() {
     // Update display orders when filters change
     useEffect(() => {
         let filtered = allOrders;
-        
+
         // Filter by status
         if (selectedStatus !== "ALL") {
             filtered = filtered.filter(order => order.status === selectedStatus);
         }
-        
+
         // Filter by table
         if (selectedTable !== "ALL") {
             filtered = filtered.filter(order => order.tableNo === selectedTable);
         }
-        
-        setDisplayOrders(filtered);
+
+        // Ensure filtered orders are also sorted by time (oldest first)
+        const sortedFiltered = filtered.sort((a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+
+        setDisplayOrders(sortedFiltered);
     }, [selectedStatus, selectedTable, allOrders]);
 
     const formatTime = (dateString: string) => {
@@ -400,10 +410,8 @@ export default function OrderManagement() {
                     <p className="text-gray-500">
                         {selectedStatus === "ALL" && selectedTable === "ALL"
                             ? "ยังไม่มีออเดอร์เข้ามาในระบบ"
-                            : `ไม่มีออเดอร์ที่ตรงกับตัวกรอง${
-                                selectedStatus !== "ALL" ? ` สถานะ: ${statusConfig[selectedStatus as OrderStatus]?.label}` : ""
-                            }${
-                                selectedTable !== "ALL" ? ` โต๊ะ: ${selectedTable}` : ""
+                            : `ไม่มีออเดอร์ที่ตรงกับตัวกรอง${selectedStatus !== "ALL" ? ` สถานะ: ${statusConfig[selectedStatus as OrderStatus]?.label}` : ""
+                            }${selectedTable !== "ALL" ? ` โต๊ะ: ${selectedTable}` : ""
                             }`
                         }
                     </p>
