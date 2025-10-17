@@ -60,8 +60,54 @@ export default function Header({ restaurant, activeTab, onTabChange }: HeaderPro
         };
       
     return (
-        <header className="w-full bg-[#F38DA9] px-4 py-2 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center flex-shrink-0">
+        <header className="w-full bg-[#F38DA9] px-4 py-2 flex flex-wrap items-center justify-between gap-2 fixed top-0 z-50">
+            <div
+                className="text-lg md:text-xl font-bold text-white order-1 md:order-none"
+                style={{ fontFamily: '"IBM Plex Mono", monospace' }}
+            >
+                {"Haroii."}
+            </div>
+            <Menubar className="order-3 w-full md:order-2 md:w-auto bg-transparent border-none p-0 h-auto space-x-2">
+                <MenubarMenu>
+                    <MenubarTrigger
+                        className={`cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm ${activeTab === 'menu' ? 'font-bold bg-white/20' : ''
+                            }`}
+                        onClick={() => onTabChange("menu")}
+                    >
+                        จัดการรายการอาหาร
+                    </MenubarTrigger>
+                </MenubarMenu>
+
+                <MenubarMenu>
+                    <MenubarTrigger
+                        className={`cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm ${activeTab === 'restaurant' ? 'font-bold bg-white/20' : ''
+                            }`}
+                        onClick={() => onTabChange("restaurant")}
+                    >
+                        ร้านอาหาร
+                    </MenubarTrigger>
+                </MenubarMenu>
+
+                <MenubarMenu>
+                    <MenubarTrigger className="cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm">
+                        รายงาน
+                    </MenubarTrigger>
+                </MenubarMenu>
+
+                <MenubarMenu>
+                    <MenubarTrigger className="cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm">
+                        จัดการร้านอาหาร
+                    </MenubarTrigger>
+                </MenubarMenu>
+
+                <MenubarMenu>
+                    <MenubarTrigger className="cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm">
+                        บัญชี
+                    </MenubarTrigger>
+                </MenubarMenu>
+            </Menubar>
+
+            <div className="flex items-center flex-shrink-0 order-2 md:order-3">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <div className="flex items-center gap-3 font-medium text-white hover:bg-white/10 text-sm md:text-base px-3 py-2 rounded-lg cursor-pointer transition-colors">
@@ -104,53 +150,6 @@ export default function Header({ restaurant, activeTab, onTabChange }: HeaderPro
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-            </div>
-
-            <Menubar className="order-3 w-full md:order-none md:w-auto bg-transparent border-none p-0 h-auto space-x-2">
-                <MenubarMenu>
-                    <MenubarTrigger
-                        className={`cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm ${activeTab === 'menu' ? 'font-bold bg-white/20' : ''
-                            }`}
-                        onClick={() => onTabChange("menu")}
-                    >
-                        จัดการรายการอาหาร
-                    </MenubarTrigger>
-                </MenubarMenu>
-
-                <MenubarMenu>
-                    <MenubarTrigger
-                        className={`cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm ${activeTab === 'restaurant' ? 'font-bold bg-white/20' : ''
-                            }`}
-                        onClick={() => onTabChange("restaurant")}
-                    >
-                        ร้านอาหาร
-                    </MenubarTrigger>
-                </MenubarMenu>
-
-                <MenubarMenu>
-                    <MenubarTrigger className="cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm">
-                        รายงาน
-                    </MenubarTrigger>
-                </MenubarMenu>
-
-                <MenubarMenu>
-                    <MenubarTrigger className="cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm">
-                        จัดการร้านอาหาร
-                    </MenubarTrigger>
-                </MenubarMenu>
-
-                <MenubarMenu>
-                    <MenubarTrigger className="cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm">
-                        บัญชี
-                    </MenubarTrigger>
-                </MenubarMenu>
-            </Menubar>
-
-            <div
-                className="text-lg md:text-xl font-bold text-white order-2 md:order-none"
-                style={{ fontFamily: '"IBM Plex Mono", monospace' }}
-            >
-                {"Haroii."}
             </div>
         </header>
     );

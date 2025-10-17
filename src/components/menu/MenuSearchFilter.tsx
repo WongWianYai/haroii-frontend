@@ -3,6 +3,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "../ui/card";
 import { Search } from "lucide-react";
 import { MenuItem } from "@/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface MenuSearchFilterProps {
   searchTerm: string;
@@ -39,26 +46,25 @@ export default function MenuSearchFilter({
           </div>
 
           {/* Category Filter */}
-          <div className="flex gap-1 flex-wrap">
-            <Button
-              variant={searchCategory === "" ? "default" : "outline"}
-              size="sm"
-              onClick={() => onCategoryChange("")}
-              className={`text-xs h-8 px-2 ${searchCategory === "" ? "bg-[#F38DA9] hover:bg-[#e37795]" : ""}`}
+          <div className="w-[200px]">
+            <Select 
+              value={searchCategory || "all"} 
+              onValueChange={(value) => onCategoryChange(value === "all" ? "" : value)}
             >
-              ทั้งหมด ({menuItems.length})
-            </Button>
-            {uniqueCategories.map((category) => (
-              <Button
-                key={category}
-                variant={searchCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => onCategoryChange(category)}
-                className={`text-xs h-8 px-2 ${searchCategory === category ? "bg-[#F38DA9] hover:bg-[#e37795]" : ""}`}
-              >
-                {category} ({menuItems.filter(item => item.category === category).length})
-              </Button>
-            ))}
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder="เลือกหมวดหมู่" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  ทั้งหมด ({menuItems.length})
+                </SelectItem>
+                {uniqueCategories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category} ({menuItems.filter(item => item.category === category).length})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
