@@ -5,6 +5,7 @@ import { apiClient } from "@/lib/api";
 import Header from "@/components/layout/Header";
 import MenuManagementTab from "@/components/menu/MenuManagementTab";
 import RestaurantForm from "@/components/restaurant/RestaurantForm";
+import OrderManagement from "@/components/orders/OrderManagement";
 import { API_URL } from "@/config";
 
 export default function MenuManagement() {
@@ -162,13 +163,14 @@ export default function MenuManagement() {
         onTabChange={setActiveTab}
       />
 
-      <div className="w-full max-w-7xl mx-auto bg-white rounded shadow p-6 mt-4">
-        {activeTab === "menu" ? (
+      <div className="w-full max-w-7xl mx-auto bg-white rounded shadow p-6 mt-20">
+        {activeTab === "menu" && (
           <MenuManagementTab
             menuItems={menuItems}
             onMenuItemsChange={fetchMenuItems}
           />
-        ) : (
+        )}
+        {activeTab === "restaurant" && (
           <RestaurantForm
             restaurant={restaurant}
             owner={owner}
@@ -179,6 +181,9 @@ export default function MenuManagement() {
             onDiscard={handleDiscard}
             onToggleEdit={handleToggleEdit}
           />
+        )}
+        {activeTab === "orders" && (
+          <OrderManagement />
         )}
       </div>
     </div>

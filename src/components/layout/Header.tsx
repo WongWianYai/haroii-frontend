@@ -29,35 +29,30 @@ interface HeaderProps {
 }
 
 export default function Header({ restaurant, activeTab, onTabChange }: HeaderProps) {
-      const router = useRouter();
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const router = useRouter();
+    
     const handleLogOut = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/v1/auth/logout`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              credentials: "include",
-             
+        try {
+            const res = await fetch(`${API_URL}/api/v1/auth/logout`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
             });
       
             if (!res.ok) {
-              const err = await res.json();
-              throw new Error(err.message || "ออกจากระบบไม่สำเร็จ");
+                const err = await res.json();
+                throw new Error(err.message || "ออกจากระบบไม่สำเร็จ");
             }
       
             const result = await res.json();
             console.log("logout success", result);
             router.push("/Auth");
-     
-          } catch (err: any) {
-            setError(err.message);
-          } finally {
-            setLoading(false);
-          }
-        };
+        } catch (err: any) {
+            console.error("Logout error:", err.message);
+        }
+    };
       
     return (
         <header className="w-full bg-[#F38DA9] px-4 py-2 flex flex-wrap items-center justify-between gap-2 fixed top-0 z-50">
@@ -95,8 +90,12 @@ export default function Header({ restaurant, activeTab, onTabChange }: HeaderPro
                 </MenubarMenu>
 
                 <MenubarMenu>
-                    <MenubarTrigger className="cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm">
-                        จัดการร้านอาหาร
+                    <MenubarTrigger
+                        className={`cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm ${activeTab === 'orders' ? 'font-bold bg-white/20' : ''
+                            }`}
+                        onClick={() => onTabChange("orders")}
+                    >
+                        ออเดอร์
                     </MenubarTrigger>
                 </MenubarMenu>
 

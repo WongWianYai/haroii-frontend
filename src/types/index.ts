@@ -29,4 +29,30 @@ export interface MeResponse {
   restaurant: Restaurant;
 }
 
-export type TabType = "menu" | "restaurant";
+export type TabType = "menu" | "restaurant" | "orders";
+
+export type OrderStatus = 'PENDING' | 'IN_PROGRESS' | 'READY' | 'SERVED';
+
+export interface OrderItem {
+  menuItemId: string;
+  name: string;
+  price: number;
+  qty: number;
+  note?: string;
+  options?: any;
+  lineTotal: number;
+}
+
+export interface Order {
+  _id: string;
+  restaurantId: string;
+  tableSessionId: string;
+  sessionTokenHash: string;
+  items: OrderItem[];
+  subtotal: number;
+  total: number;
+  hasNotes: boolean;
+  status: OrderStatus;
+  createdAt: string;
+  updatedAt: string;
+}
