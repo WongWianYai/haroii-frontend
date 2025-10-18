@@ -111,11 +111,11 @@ export default function MenuForm({ menu, onSuccess, onClose }: MenuFormProps) {
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {menu ? (
+                {/* {menu ? (
                   <UtensilsCrossed className="w-6 h-6 text-[#F38DA9]" />
                 ) : (
                   <Plus className="w-6 h-6 text-[#F38DA9]" />
-                )}
+                )} */}
                 <div>
                   <CardTitle className="text-xl">
                     {menu ? "แก้ไขเมนู" : "เพิ่มเมนูใหม่"}

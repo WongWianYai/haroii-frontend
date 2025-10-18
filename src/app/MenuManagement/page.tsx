@@ -9,7 +9,7 @@ import OrderManagement from "@/components/orders/OrderManagement";
 import { API_URL } from "@/config";
 
 export default function MenuManagement() {
-  const [activeTab, setActiveTab] = useState<TabType>("menu");
+  const [activeTab, setActiveTab] = useState<TabType>("orders");
   const [loading, setLoading] = useState(true);
   const [isEdit, setIsEdit] = useState(false);
   const [error, setError] = useState<string | null>(null);

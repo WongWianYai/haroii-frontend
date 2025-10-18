@@ -65,6 +65,16 @@ export default function Header({ restaurant, activeTab, onTabChange }: HeaderPro
             <Menubar className="order-3 w-full md:order-2 md:w-auto bg-transparent border-none p-0 h-auto space-x-2">
                 <MenubarMenu>
                     <MenubarTrigger
+                        className={`cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm ${activeTab === 'orders' ? 'font-bold bg-white/20' : ''
+                            }`}
+                        onClick={() => onTabChange("orders")}
+                    >
+                        ออเดอร์
+                    </MenubarTrigger>
+                </MenubarMenu>
+                
+                <MenubarMenu>
+                    <MenubarTrigger
                         className={`cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm ${activeTab === 'menu' ? 'font-bold bg-white/20' : ''
                             }`}
                         onClick={() => onTabChange("menu")}
@@ -86,16 +96,6 @@ export default function Header({ restaurant, activeTab, onTabChange }: HeaderPro
                 <MenubarMenu>
                     <MenubarTrigger className="cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm">
                         รายงาน
-                    </MenubarTrigger>
-                </MenubarMenu>
-
-                <MenubarMenu>
-                    <MenubarTrigger
-                        className={`cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm ${activeTab === 'orders' ? 'font-bold bg-white/20' : ''
-                            }`}
-                        onClick={() => onTabChange("orders")}
-                    >
-                        ออเดอร์
                     </MenubarTrigger>
                 </MenubarMenu>
 
