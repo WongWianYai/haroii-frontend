@@ -13,7 +13,13 @@ import {
     RefreshCw,
     StickyNote,
     Calendar,
-    Hash
+    Hash,
+    Trash2,
+    Minus,
+    X,
+    AlertTriangle,
+    Save,
+    Plus
 } from "lucide-react";
 import { API_URL, API_BASE_PATH } from "@/config";
 
@@ -23,28 +29,40 @@ const statusConfig = {
         color: "bg-yellow-100 text-yellow-800 border-yellow-200",
         icon: Clock,
         nextStatus: "IN_PROGRESS" as OrderStatus,
-        nextLabel: "เริ่มทำ"
+        nextLabel: "เริ่มทำ",
+        canCancel: true
     },
     IN_PROGRESS: {
         label: "กำลังทำ",
         color: "bg-blue-100 text-blue-800 border-blue-200",
         icon: ChefHat,
         nextStatus: "READY" as OrderStatus,
-        nextLabel: "เสร็จแล้ว"
+        nextLabel: "เสร็จแล้ว",
+        canCancel: false
     },
     READY: {
         label: "พร้อมเสิร์ฟ",
         color: "bg-green-100 text-green-800 border-green-200",
         icon: CheckCircle,
         nextStatus: "SERVED" as OrderStatus,
-        nextLabel: "เสิร์ฟแล้ว"
+        nextLabel: "เสิร์ฟแล้ว",
+        canCancel: false
     },
     SERVED: {
         label: "เสิร์ฟแล้ว",
         color: "bg-gray-100 text-gray-800 border-gray-200",
         icon: Utensils,
         nextStatus: null,
-        nextLabel: null
+        nextLabel: null,
+        canCancel: false
+    },
+    CANCELLED: {
+        label: "ยกเลิกแล้ว",
+        color: "bg-red-100 text-red-800 border-red-200",
+        icon: X,
+        nextStatus: null,
+        nextLabel: null,
+        canCancel: false
     }
 };
 
@@ -56,14 +74,17 @@ export default function OrderManagement() {
     const [updatingOrder, setUpdatingOrder] = useState<string | null>(null);
     const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "ALL">("ALL");
     const [selectedTable, setSelectedTable] = useState<string>("ALL");
+    const [editingOrder, setEditingOrder] = useState<string | null>(null);
+    const [editingItems, setEditingItems] = useState<any[]>([]);
 
-    const getAuthHeaders = () => {
+    const getAuthHeaders = (): Record<string, string> => {
         // Get token from cookies
         const token = document.cookie
             .split('; ')
             .find(row => row.startsWith('token='))
             ?.split('=')[1];
 
+        console.log('Auth token:', token ? 'Found' : 'Not found');
         return token ? { Authorization: `Bearer ${token}` } : {};
     };
 
@@ -107,6 +128,7 @@ export default function OrderManagement() {
             const ordersWithTableNumbers = await Promise.all(
                 data.map(async (order: Order) => {
                     const tableNo = await fetchTableNumber(order.tableSessionId);
+
                     return { ...order, tableNo };
                 })
             );
@@ -138,6 +160,7 @@ export default function OrderManagement() {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
+                    ...getAuthHeaders(),
                 },
                 credentials: "include",
                 body: JSON.stringify({ nextStatus }),
@@ -155,6 +178,137 @@ export default function OrderManagement() {
             setUpdatingOrder(null);
         }
     };
+
+    // เริ่มการแก้ไขออเดอร์
+    const startEditingOrder = (orderId: string) => {
+        const order = allOrders.find(o => o._id === orderId);
+        if (order) {
+            setEditingOrder(orderId);
+            setEditingItems([...order.items]); // Copy items for editing
+        }
+    };
+
+    // ยกเลิกการแก้ไข
+    const cancelEditing = () => {
+        setEditingOrder(null);
+        setEditingItems([]);
+    };
+
+    // อัปเดตจำนวนในโหมดแก้ไข (local state)
+    const updateEditingItemQuantity = (itemIndex: number, newQuantity: number) => {
+        const updatedItems = [...editingItems];
+        if (newQuantity <= 0) {
+            // ลบรายการถ้าจำนวนเป็น 0
+            updatedItems.splice(itemIndex, 1);
+        } else {
+            updatedItems[itemIndex] = {
+                ...updatedItems[itemIndex],
+                qty: newQuantity,
+                lineTotal: updatedItems[itemIndex].price * newQuantity
+            };
+        }
+        setEditingItems(updatedItems);
+    };
+
+    // ลบรายการในโหมดแก้ไข (local state)
+    const removeEditingItem = (itemIndex: number) => {
+        const updatedItems = [...editingItems];
+        updatedItems.splice(itemIndex, 1);
+        setEditingItems(updatedItems);
+    };
+
+    // บันทึกการแก้ไข
+    const saveOrderChanges = async (orderId: string) => {
+        if (editingItems.length === 0) {
+            if (confirm("ไม่มีรายการในออเดอร์ คุณต้องการยกเลิกออเดอร์ทั้งหมดหรือไม่?")) {
+                await cancelOrder(orderId);
+            }
+            return;
+        }
+
+        try {
+            setUpdatingOrder(orderId);
+
+            const itemsForApi = editingItems.map(item => ({
+                menuItemId: String(item.menuItemId), // Ensure string
+                qty: parseInt(String(item.qty)), // Ensure integer
+                note: item.note || '', // Ensure string
+                options: item.options || {} // Ensure object
+            }));
+
+            // Validate data before sending
+            const invalidItems = itemsForApi.filter(item =>
+                !item.menuItemId || isNaN(item.qty) || item.qty <= 0
+            );
+
+            if (invalidItems.length > 0) {
+                throw new Error('Invalid item data detected');
+            }
+
+            const apiUrl = `${API_URL}${API_BASE_PATH}/orders/${orderId}/items`;
+            console.log('Sending update request to:', apiUrl);
+            console.log('Request data:', { items: itemsForApi });
+            console.log('Headers:', getAuthHeaders());
+
+            const response = await fetch(apiUrl, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...getAuthHeaders(),
+                },
+                credentials: "include",
+                body: JSON.stringify({ items: itemsForApi }),
+            });
+
+            console.log('Response status:', response.status);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('API Error Response:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: errorData
+                });
+
+                if (response.status === 401) {
+                    throw new Error('ไม่ได้รับอนุญาต กรุณาเข้าสู่ระบบใหม่');
+                } else if (response.status === 403) {
+                    throw new Error('ไม่มีสิทธิ์ในการแก้ไขออเดอร์นี้');
+                } else if (response.status === 404) {
+                    throw new Error('ไม่พบออเดอร์ที่ต้องการแก้ไข');
+                } else {
+                    throw new Error(errorData.message || `เกิดข้อผิดพลาด (${response.status})`);
+                }
+            }
+
+            // Refresh orders and exit editing mode
+            await fetchOrders();
+            cancelEditing();
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setUpdatingOrder(null);
+        }
+    };
+
+    // ยกเลิกออเดอร์ทั้งหมด
+    const cancelOrder = async (orderId: string) => {
+        if (!confirm("คุณแน่ใจหรือไม่ที่จะยกเลิกออเดอร์นี้?")) {
+            return;
+        }
+
+        try {
+            setUpdatingOrder(orderId);
+            await updateOrderStatus(orderId, "CANCELLED" as OrderStatus);
+            cancelEditing(); // Exit editing mode if active
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setUpdatingOrder(null);
+        }
+    };
+
+
 
     useEffect(() => {
         fetchOrders();
@@ -354,7 +508,7 @@ export default function OrderManagement() {
                             <CardContent className="space-y-4">
                                 {/* Order Items */}
                                 <div className="space-y-2">
-                                    {order.items.map((item, index) => (
+                                    {(editingOrder === order._id ? editingItems : order.items).map((item, index) => (
                                         <div key={index} className="flex justify-between items-start text-sm">
                                             <div className="flex-1">
                                                 <div className="font-medium">{item.name}</div>
@@ -366,8 +520,45 @@ export default function OrderManagement() {
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="text-right">
-                                                <div className="font-medium">฿{item.lineTotal}</div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="text-right">
+                                                    <div className="font-medium">฿{item.lineTotal}</div>
+                                                </div>
+
+                                                {/* Edit Item Controls - Only for PENDING orders in editing mode */}
+                                                {config.canCancel && editingOrder === order._id && (
+                                                    <div className="flex items-center gap-1">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                            onClick={() => updateEditingItemQuantity(index, item.qty + 1)}
+                                                            disabled={updatingOrder === order._id}
+                                                        >
+                                                            <Plus className="w-3 h-3" />
+                                                        </Button>
+                                                        {item.qty > 1 && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="h-6 w-6 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                                                onClick={() => updateEditingItemQuantity(index, item.qty - 1)}
+                                                                disabled={updatingOrder === order._id}
+                                                            >
+                                                                <Minus className="w-3 h-3" />
+                                                            </Button>
+                                                        )}
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                            onClick={() => removeEditingItem(index)}
+                                                            disabled={updatingOrder === order._id}
+                                                        >
+                                                            <X className="w-3 h-3" />
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
@@ -377,25 +568,82 @@ export default function OrderManagement() {
                                 <div className="border-t pt-2">
                                     <div className="flex justify-between items-center font-semibold">
                                         <span>รวมทั้งหมด</span>
-                                        <span className="text-[#F38DA9]">฿{order.total}</span>
+                                        <span className="text-[#F38DA9]">
+                                            ฿{editingOrder === order._id
+                                                ? editingItems.reduce((sum, item) => sum + item.lineTotal, 0)
+                                                : order.total
+                                            }
+                                        </span>
                                     </div>
                                 </div>
 
-                                {/* Action Button */}
-                                {config.nextStatus && (
-                                    <Button
-                                        onClick={() => updateOrderStatus(order._id, config.nextStatus!)}
-                                        disabled={updatingOrder === order._id}
-                                        className="w-full bg-[#F38DA9] hover:bg-[#e37795]"
-                                        size="sm"
-                                    >
-                                        {updatingOrder === order._id ? (
-                                            <RefreshCw className="w-4 h-4 animate-spin" />
-                                        ) : (
-                                            config.nextLabel
-                                        )}
-                                    </Button>
-                                )}
+                                {/* Action Buttons */}
+                                <div className="space-y-2">
+                                    {/* Edit Mode Controls - Only for PENDING orders */}
+                                    {config.canCancel && editingOrder === order._id && (
+                                        <div className="flex gap-2">
+                                            <Button
+                                                onClick={() => saveOrderChanges(order._id)}
+                                                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                                size="sm"
+                                                disabled={updatingOrder === order._id}
+                                            >
+                                                <Save className="w-4 h-4 mr-1" />
+                                                บันทึก
+                                            </Button>
+                                            <Button
+                                                onClick={cancelEditing}
+                                                variant="outline"
+                                                className="text-gray-600 border-gray-200 hover:bg-gray-50"
+                                                size="sm"
+                                                disabled={updatingOrder === order._id}
+                                            >
+                                                ยกเลิก
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                    {/* Normal Controls - Only for PENDING orders not in editing mode */}
+                                    {config.canCancel && editingOrder !== order._id && (
+                                        <div className="flex gap-2">
+                                            <Button
+                                                onClick={() => startEditingOrder(order._id)}
+                                                variant="outline"
+                                                className="flex-1 text-orange-600 border-orange-200 hover:bg-orange-50"
+                                                size="sm"
+                                                disabled={updatingOrder === order._id}
+                                            >
+                                                <AlertTriangle className="w-4 h-4 mr-1" />
+                                                แก้ไขออเดอร์
+                                            </Button>
+                                            <Button
+                                                onClick={() => cancelOrder(order._id)}
+                                                variant="outline"
+                                                className="text-red-600 border-red-200 hover:bg-red-50"
+                                                size="sm"
+                                                disabled={updatingOrder === order._id}
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                    {/* Progress Button - Only when not editing */}
+                                    {config.nextStatus && editingOrder !== order._id && (
+                                        <Button
+                                            onClick={() => updateOrderStatus(order._id, config.nextStatus!)}
+                                            disabled={updatingOrder === order._id}
+                                            className="w-full bg-[#F38DA9] hover:bg-[#e37795]"
+                                            size="sm"
+                                        >
+                                            {updatingOrder === order._id ? (
+                                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                config.nextLabel
+                                            )}
+                                        </Button>
+                                    )}
+                                </div>
                             </CardContent>
                         </Card>
                     );

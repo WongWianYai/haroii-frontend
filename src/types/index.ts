@@ -31,7 +31,7 @@ export interface MeResponse {
 
 export type TabType = "menu" | "restaurant" | "orders";
 
-export type OrderStatus = 'PENDING' | 'IN_PROGRESS' | 'READY' | 'SERVED';
+export type OrderStatus = 'PENDING' | 'IN_PROGRESS' | 'READY' | 'SERVED' | 'CANCELLED';
 
 export interface OrderItem {
   menuItemId: string;
