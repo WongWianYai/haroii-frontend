@@ -35,40 +35,40 @@ import { API_URL, API_BASE_PATH } from "@/config";
 const statusConfig = {
   PENDING: {
     label: "รอดำเนินการ",
-    color: "bg-amber-100 text-amber-800 border-amber-300",
-    bgGradient: "from-amber-50 to-orange-50",
+    color: "bg-yellow-50 text-yellow-900 border-yellow-400",
+    bgGradient: "from-yellow-50 to-amber-50",
     icon: Clock,
     nextStatus: "IN_PROGRESS" as OrderStatus,
     nextLabel: "เริ่มทำ",
     canCancel: true,
     priority: 1,
-    actionColor: "bg-blue-600 hover:bg-blue-700",
+    actionColor: "bg-yellow-600 hover:bg-yellow-700 text-white",
   },
   IN_PROGRESS: {
     label: "กำลังทำ",
-    color: "bg-blue-100 text-blue-800 border-blue-300",
-    bgGradient: "from-blue-50 to-indigo-50",
+    color: "bg-indigo-50 text-indigo-900 border-indigo-400",
+    bgGradient: "from-indigo-50 to-blue-50",
     icon: ChefHat,
     nextStatus: "READY" as OrderStatus,
     nextLabel: "เสร็จแล้ว",
     canCancel: false,
     priority: 2,
-    actionColor: "bg-green-600 hover:bg-green-700",
+    actionColor: "bg-indigo-600 hover:bg-indigo-700 text-white",
   },
   READY: {
     label: "พร้อมเสิร์ฟ",
-    color: "bg-green-100 text-green-800 border-green-300",
+    color: "bg-green-50 text-green-900 border-green-400",
     bgGradient: "from-green-50 to-emerald-50",
     icon: CheckCircle,
     nextStatus: "SERVED" as OrderStatus,
     nextLabel: "เสิร์ฟแล้ว",
     canCancel: false,
     priority: 3,
-    actionColor: "bg-gray-600 hover:bg-gray-700",
+    actionColor: "bg-green-600 hover:bg-green-700 text-white",
   },
   SERVED: {
     label: "เสิร์ฟแล้ว",
-    color: "bg-gray-100 text-gray-600 border-gray-300",
+    color: "bg-gray-50 text-gray-600 border-gray-300",
     bgGradient: "from-gray-50 to-slate-50",
     icon: Utensils,
     nextStatus: null,
@@ -79,8 +79,8 @@ const statusConfig = {
   },
   CANCELLED: {
     label: "ยกเลิกแล้ว",
-    color: "bg-red-100 text-red-800 border-red-300",
-    bgGradient: "from-red-50 to-pink-50",
+    color: "bg-red-50 text-red-900 border-red-400",
+    bgGradient: "from-red-50 to-rose-50",
     icon: X,
     nextStatus: null,
     nextLabel: null,
@@ -89,7 +89,6 @@ const statusConfig = {
     actionColor: "",
   },
 };
-
 export default function OrderManagement() {
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [displayOrders, setDisplayOrders] = useState<Order[]>([]);
@@ -962,7 +961,7 @@ function OrderCard({
   const elapsedTime = getElapsedTime(order.createdAt);
 
   const urgencyColors = {
-    high: "border-red-300 bg-red-50",
+    high: "bg-amber-100",
     medium: "border-yellow-300 bg-yellow-50",
     low: "border-gray-200 bg-white",
   };
@@ -970,7 +969,7 @@ function OrderCard({
   return (
     <Card
       className={`hover:shadow-lg transition-all duration-200 ${
-        urgencyColors[urgencyLevel as keyof typeof urgencyColors]
+        statusConfig[order.status].bgGradient
       } relative overflow-hidden`}
     >
       {/* Urgency indicator */}
