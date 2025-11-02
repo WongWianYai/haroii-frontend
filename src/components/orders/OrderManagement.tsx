@@ -365,7 +365,7 @@ export default function OrderManagement() {
 
     const interval = setInterval(() => {
       fetchOrders();
-    }, 30000);
+    }, 20000);
 
     return () => clearInterval(interval);
   }, [autoRefresh]);
@@ -526,17 +526,17 @@ export default function OrderManagement() {
             </div>
 
             <div className="flex items-center gap-3">
-           
-
               {/* View mode toggle */}
-              <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              {/* <div className="flex items-center  rounded-lg p-1">
                 <Button
                   onClick={() => setViewMode("table")}
                   variant={viewMode === "table" ? "default" : "ghost"}
                   size="sm"
                   className={`flex items-center gap-2 ${
-                    viewMode === "table" ? "bg-white shadow-sm" : ""
-                  }`}
+                    viewMode === "table"
+                      ? "bg-[#F38DA9] text-white shadow-sm"
+                      : ""
+                  } hover:bg-transparent border border-gray-200`}
                 >
                   <Grid3X3 className="w-4 h-4" />
                   ตามโต๊ะ
@@ -546,20 +546,26 @@ export default function OrderManagement() {
                   variant={viewMode === "status" ? "default" : "ghost"}
                   size="sm"
                   className={`flex items-center gap-2 ${
-                    viewMode === "status" ? "bg-white shadow-sm" : ""
-                  }`}
+                    viewMode === "status"
+                      ? "bg-[#F38DA9] shadow-sm text-white"
+                      : ""
+                  } hover:bg-transparent border border-gray-200`}
                 >
                   <List className="w-4 h-4" />
                   ตามสถานะ
                 </Button>
-              </div>
+              </div> */}
 
               {/* Filter toggle */}
               <Button
                 onClick={() => setShowFilters(!showFilters)}
                 variant={showFilters ? "default" : "outline"}
                 size="sm"
-                className="flex items-center gap-2"
+                className={`flex items-center gap-2 shadow-sm border border-gray-200 overflow-hidden ${
+                  showFilters
+                    ? "bg-[#F38DA9] text-white hover:bg-transparent hover:text-black"
+                    : ""
+                }`}
               >
                 <Filter className="w-4 h-4" />
                 ตัวกรอง
@@ -753,7 +759,6 @@ export default function OrderManagement() {
                         <MapPin className="w-6 h-6 text-white" />
                       </div>
                       <div className="flex justify-between">
-                        
                         <div>
                           <h2 className="text-xl font-bold text-gray-900">
                             โต๊ะ {tableNo}
@@ -761,10 +766,6 @@ export default function OrderManagement() {
                           <p className="text-sm text-gray-600">
                             {orders.length} ออเดอร์
                           </p>
-                        </div>
-                        <div>
-                          ราคารวม{" "}
-                           {orders.reduce((sum, order) => sum + order.total, 0)}
                         </div>
                       </div>
                     </div>
@@ -809,75 +810,24 @@ export default function OrderManagement() {
                     ))}
                   </div>
                 </div>
+                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end">
+                    
+                    <div className="text-l text-gray-600 font-bold mr-4">ราคารวมทั้งหมด</div>
+                    <div className="inline-flex items-center gap-2 bg-white/80 text-[#BE185D] font-semibold px-3 py-1 rounded-md shadow-sm border border-[#F5C6D0]">
+                      <span className="text-sm">฿</span>
+                      <span className="text-lg">
+                        {Number(
+                          orders.reduce((sum, order) => sum + order.total, 0)
+                        ).toLocaleString("th-TH")}
+                      </span>
+                    </div>
+                  </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Status View */}
-        {viewMode === "status" && (
-          <div className="space-y-6">
-            {getOrdersByStatus().map(({ status, orders }) => {
-              const config = statusConfig[status];
-              const StatusIcon = config.icon;
-
-              return (
-                <div
-                  key={status}
-                  className={`bg-gradient-to-r ${config.bgGradient} rounded-2xl shadow-sm border border-gray-200 overflow-hidden`}
-                >
-                  {/* Status Header */}
-                  <div className="px-6 py-4 border-b border-gray-200 bg-white/50">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`w-12 h-12 ${config.color} rounded-xl flex items-center justify-center`}
-                        >
-                          <StatusIcon className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <h2 className="text-xl font-bold text-gray-900">
-                            {config.label}
-                          </h2>
-                          <p className="text-sm text-gray-600">
-                            {orders.length} ออเดอร์
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Orders Grid for this status */}
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                      {orders.map((order) => (
-                        <OrderCard
-                          key={order._id}
-                          order={order}
-                          config={config}
-                          editingOrder={editingOrder}
-                          editingItems={editingItems}
-                          updatingOrder={updatingOrder}
-                          onStartEdit={startEditingOrder}
-                          onCancelEdit={cancelEditing}
-                          onSaveChanges={saveOrderChanges}
-                          onCancelOrder={cancelOrder}
-                          onUpdateStatus={updateOrderStatus}
-                          onUpdateEditingItem={updateEditingItemQuantity}
-                          onRemoveEditingItem={removeEditingItem}
-                          getElapsedTime={getElapsedTime}
-                          getUrgencyLevel={getUrgencyLevel}
-                          formatTime={formatTime}
-                          formatDate={formatDate}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+     
 
         {/* Enhanced Empty State */}
         {filteredOrders.length === 0 && !loading && (
