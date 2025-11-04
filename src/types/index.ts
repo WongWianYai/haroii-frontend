@@ -29,7 +29,7 @@ export interface MeResponse {
   restaurant: Restaurant;
 }
 
-export type TabType = "menu" | "restaurant" | "orders";
+export type TabType = "menu" | "restaurant" | "orders" | "history";
 
 export type OrderStatus = 'PENDING' | 'IN_PROGRESS' | 'READY' | 'SERVED' | 'CANCELLED';
 
