@@ -94,7 +94,10 @@ export default function Header({ restaurant, activeTab, onTabChange }: HeaderPro
                 </MenubarMenu>
 
                 <MenubarMenu>
-                    <MenubarTrigger className="cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm">
+                    <MenubarTrigger className={`cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm ${activeTab === 'history' ? 'font-bold bg-white/20' : ''
+                            }`}
+                        onClick={() => onTabChange("history")}
+                    >
                         รายงาน
                     </MenubarTrigger>
                 </MenubarMenu>

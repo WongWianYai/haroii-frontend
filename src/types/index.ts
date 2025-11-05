@@ -29,7 +29,7 @@ export interface MeResponse {
   restaurant: Restaurant;
 }
 
-export type TabType = "menu" | "restaurant" | "orders";
+export type TabType = "menu" | "restaurant" | "orders" | "history";
 
 export type OrderStatus = 'PENDING' | 'IN_PROGRESS' | 'READY' | 'SERVED' | 'CANCELLED';
 
@@ -63,4 +63,39 @@ export interface TableSession {
   tableNo: string;
   restaurantId: string;
   expiresAt: string;
+}
+
+export interface OrderHistoryItem {
+  id: string;
+  originalOrderId?: string;
+  restaurantId?: string;
+  tableSessionId?: string;
+  tableNo: string;
+  items: OrderItem[];
+  subtotal?: number;
+  total: number;
+  status: OrderStatus;
+  orderCreatedAt?: string;
+  orderUpdatedAt?: string;
+  sessionDuration?: number;
+  transferredAt?: string;
+  hasNotes: boolean;
+  // Add other fields as they appear in your actual data
+}
+
+export interface OrderHistoryResponse {
+  success: boolean;
+  data: OrderHistoryItem[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+  filters: {
+    sortBy: string;
+    sortOrder: string;
+  };
 }

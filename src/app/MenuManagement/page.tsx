@@ -6,6 +6,7 @@ import Header from "@/components/layout/Header";
 import MenuManagementTab from "@/components/menu/MenuManagementTab";
 import RestaurantForm from "@/components/restaurant/RestaurantForm";
 import OrderManagement from "@/components/orders/OrderManagement";
+import OrderHistory from "@/components/orderHistory/OrderHistory"
 import { API_URL } from "@/config";
 
 export default function MenuManagement() {
@@ -184,6 +185,9 @@ export default function MenuManagement() {
         )}
         {activeTab === "orders" && (
           <OrderManagement />
+        )}
+        {activeTab === "history" && (
+          <OrderHistory />
         )}
       </div>
     </div>
