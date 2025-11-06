@@ -1019,9 +1019,9 @@ function OrderCard({
                   <div className="font-semibold text-gray-900">{item.name}</div>
                   <div className="text-gray-600 text-xs">จำนวน: {item.qty}</div>
                   {item.note && (
-                    <div className="flex items-center gap-1 text-xs text-orange-600 mt-1 bg-orange-50 px-2 py-1 rounded">
-                      <StickyNote className="w-3 h-3" />
-                      {item.note}
+                    <div className="inline-flex items-center mt-2 px-3 py-1 text-xs font-medium text-orange-800 bg-orange-100 rounded-full shadow-sm ">
+                      <span className="mr-1 text-sm">📝</span>
+                      หมายเหตุ: {item.note}
                     </div>
                   )}
                 </div>
@@ -1119,17 +1119,28 @@ function OrderCard({
               <Button
                 onClick={() => onStartEdit(order._id)}
                 variant="outline"
-                className="flex-1 text-orange-600 border-orange-300 hover:bg-orange-50"
+                className="
+    flex-1 flex items-center justify-center
+    text-orange-600 border-2 border-orange-400
+    hover:bg-orange-50 hover:border-orange-500 hover:text-orange-700
+    active:bg-orange-100 active:scale-95
+    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent
+    transition-all duration-200 ease-in-out
+    rounded-lg shadow-sm hover:shadow-lg
+    font-semibold tracking-wide
+    group
+  "
                 size="sm"
                 disabled={updatingOrder === order._id}
               >
-                <AlertTriangle className="w-4 h-4 mr-2" />
+                <AlertTriangle className="w-4 h-4 mr-2 text-orange-500 group-hover:text-orange-600 transition-colors duration-200" />
                 แก้ไข
               </Button>
+
               <Button
                 onClick={() => onCancelOrder(order._id)}
                 variant="outline"
-                className="text-red-600 border-red-300 hover:bg-red-50"
+                className="text-red-800 border-2 border-red-700 hover:bg-red-200 hover:text-red-900"
                 size="sm"
                 disabled={updatingOrder === order._id}
               >
