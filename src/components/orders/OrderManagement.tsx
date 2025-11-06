@@ -477,6 +477,29 @@ export default function OrderManagement() {
     }
   };
 
+  const clearTable = async (tableId: string) => {
+    try {
+      const res = await fetch(
+        `${API_URL}${API_BASE_PATH}/table-sessions/${tableId}/close`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message);
+      }
+      const result = res.json();
+    } catch (err: any) {
+      console.log("เคลียร์โต๊ะไม่สำเร็จ", err.message);
+    }
+  };
+
   const getUrgencyLevel = (createdAt: string, status: OrderStatus) => {
     const diffMins = Math.floor(
       (new Date().getTime() - new Date(createdAt).getTime()) / 60000
@@ -810,9 +833,30 @@ export default function OrderManagement() {
                     ))}
                   </div>
                 </div>
-                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end">
-                    
-                    <div className="text-l text-gray-600 font-bold mr-4">ราคารวมทั้งหมด</div>
+                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                  <div>
+                    <Button
+                      onClick={async () => {
+                        const token = orders?.[0]?.tableSessionId;
+                        if (token) {
+                          await clearTable(token);
+                          window.location.reload();
+                        } else {
+                          alert("No session token available for this table");
+                        }
+                      }}
+                      size="sm"
+                      className="ml-auto bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1.5" />
+                      เคลียร์โต๊ะ
+                    </Button>
+                  </div>
+
+                  <div className="flex justify-center items-center">
+                    <div className="text-l text-gray-600 font-bold mr-4">
+                      ราคารวมทั้งหมด
+                    </div>
                     <div className="inline-flex items-center gap-2 bg-white/80 text-[#BE185D] font-semibold px-3 py-1 rounded-md shadow-sm border border-[#F5C6D0]">
                       <span className="text-sm">฿</span>
                       <span className="text-lg">
@@ -822,12 +866,11 @@ export default function OrderManagement() {
                       </span>
                     </div>
                   </div>
+                </div>
               </div>
             ))}
           </div>
         )}
-
-     
 
         {/* Enhanced Empty State */}
         {filteredOrders.length === 0 && !loading && (
