@@ -180,6 +180,8 @@ const OrderHistory: React.FC = () => {
     setSearchTerm("");
     setDateFrom("");
     setDateTo("");
+    setSortField("date");
+    setSortOrder("desc");
     setCurrentPage(1);
     setFilteredOrders(allOrders);
   };
