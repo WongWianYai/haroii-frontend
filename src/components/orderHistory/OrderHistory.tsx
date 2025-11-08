@@ -17,6 +17,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { OrderHistoryItem, OrderHistoryResponse, OrderStatus } from "@/types";
 import { API_URL } from "@/config";
 
@@ -31,6 +37,16 @@ const OrderHistory: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  
+  // Sorting states
+  type SortField = "id" | "tableNo" | "items" | "total" | "status" | "date";
+  type SortOrder = "asc" | "desc";
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  
+  // Modal state
+  const [selectedOrder, setSelectedOrder] = useState<OrderHistoryItem | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -78,7 +94,7 @@ const OrderHistory: React.FC = () => {
     }
   };
 
-  // Client-side filtering
+  // Client-side filtering and sorting
   const applyFilters = () => {
     let filtered = [...allOrders];
 
@@ -97,8 +113,61 @@ const OrderHistory: React.FC = () => {
       );
     }
 
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortField) {
+        case "id":
+          comparison = a.id.localeCompare(b.id);
+          break;
+        case "tableNo":
+          comparison = a.tableNo.localeCompare(b.tableNo);
+          break;
+        case "items":
+          const aItems = a.items.length;
+          const bItems = b.items.length;
+          comparison = aItems - bItems;
+          break;
+        case "total":
+          comparison = a.total - b.total;
+          break;
+        case "status":
+          comparison = a.status.localeCompare(b.status);
+          break;
+        case "date":
+          const aDate = a.orderCreatedAt ? new Date(a.orderCreatedAt).getTime() : 0;
+          const bDate = b.orderCreatedAt ? new Date(b.orderCreatedAt).getTime() : 0;
+          comparison = aDate - bDate;
+          break;
+      }
+      
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+
     setFilteredOrders(filtered);
     setTotalPages(Math.ceil(filtered.length / 20));
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Toggle sort order if clicking the same field
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      // Set new field and default to ascending
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
+  const handleOrderClick = (order: OrderHistoryItem) => {
+    setSelectedOrder(order);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedOrder(null);
   };
 
   const handleSearch = () => {
@@ -120,10 +189,10 @@ const OrderHistory: React.FC = () => {
     fetchOrderHistory();
   }, [dateFrom, dateTo]);
 
-  // Apply filters when allOrders or filters change
+  // Apply filters when allOrders, filters, or sorting changes
   useEffect(() => {
     applyFilters();
-  }, [allOrders, statusFilter, searchTerm]);
+  }, [allOrders, statusFilter, searchTerm, sortField, sortOrder]);
 
   const handleExport = async (format: "csv") => {
     try {
@@ -378,14 +447,38 @@ const OrderHistory: React.FC = () => {
               <TableHead>รหัสออเดอร์</TableHead>
               <TableHead>โต๊ะ</TableHead>
               <TableHead>รายการ</TableHead>
-              <TableHead>ยอดรวม</TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-gray-100 select-none"
+                onClick={() => handleSort("total")}
+              >
+                <div className="flex items-center gap-1">
+                  ยอดรวม
+                  {sortField === "total" && (
+                    <span>{sortOrder === "asc" ? "↑" : "↓"}</span>
+                  )}
+                </div>
+              </TableHead>
               <TableHead>สถานะ</TableHead>
-              <TableHead>วันที่สั่ง</TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-gray-100 select-none"
+                onClick={() => handleSort("date")}
+              >
+                <div className="flex items-center gap-1">
+                  วันที่สั่ง
+                  {sortField === "date" && (
+                    <span>{sortOrder === "asc" ? "↑" : "↓"}</span>
+                  )}
+                </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredOrders && filteredOrders.length > 0 && filteredOrders.map((order) => (
-              <TableRow key={order.id}>
+              <TableRow 
+                key={order.id}
+                className="cursor-pointer hover:bg-gray-50"
+                onClick={() => handleOrderClick(order)}
+              >
                 <TableCell className="font-mono text-sm">
                   {(order.originalOrderId || order.id).slice(-8)}
                 </TableCell>
@@ -453,6 +546,83 @@ const OrderHistory: React.FC = () => {
           </Button>
         </div>
       )}
+
+      {/* Order Detail Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">รายละเอียดออเดอร์</DialogTitle>
+          </DialogHeader>
+          
+          {selectedOrder && (
+            <div className="space-y-4">
+              {/* Order Info */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="text-sm text-gray-600">รหัสออเดอร์</p>
+                  <p className="font-mono font-semibold">{selectedOrder.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">โต๊ะ</p>
+                  <p className="font-semibold text-lg">{selectedOrder.tableNo}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">สถานะ</p>
+                  <div className="mt-1">{getStatusBadge(selectedOrder.status)}</div>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">วันที่สั่ง</p>
+                  <p className="font-medium">
+                    {selectedOrder.orderCreatedAt ? formatDateTime(selectedOrder.orderCreatedAt) : '-'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div>
+                <h3 className="font-semibold text-lg mb-3">รายการอาหาร</h3>
+                <div className="space-y-2">
+                  {selectedOrder.items.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-start p-3 bg-gray-50 rounded">
+                      <div className="flex-1">
+                        <p className="font-medium">{item.name}</p>
+                        {item.note && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            📝 {item.note}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className="text-sm text-gray-600">x{item.qty}</p>
+                        <p className="font-semibold">
+                          {formatCurrency(item.lineTotal || (item.price * item.qty))}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Total */}
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center text-lg font-bold">
+                  <span>ยอดรวมทั้งหมด</span>
+                  <span className="text-2xl text-blue-600">
+                    {formatCurrency(selectedOrder.total)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <div className="flex justify-end pt-2">
+                <Button onClick={handleCloseModal} variant="outline">
+                  ปิด
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
