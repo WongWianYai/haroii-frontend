@@ -21,32 +21,31 @@ import { OrderHistoryItem, OrderHistoryResponse, OrderStatus } from "@/types";
 import { API_URL } from "@/config";
 
 const OrderHistory: React.FC = () => {
-  const [orderHistory, setOrderHistory] = useState<OrderHistoryItem[]>([]);
+  const [allOrders, setAllOrders] = useState<OrderHistoryItem[]>([]); // All orders from API
+  const [filteredOrders, setFilteredOrders] = useState<OrderHistoryItem[]>([]); // Filtered orders for display
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Filter states
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
 
   const fetchOrderHistory = async () => {
     try {
       setLoading(true);
       setError(null);
       const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: "20",
+        page: "1",
+        limit: "1000", // Fetch more orders for client-side filtering
       });
 
-      if (statusFilter !== "all") {
-        params.append("status", statusFilter);
-      }
-      if (search.trim()) {
-        params.append("tableNo", search.trim());
-      }
+      // Only send backend-supported filters
       if (dateFrom) {
         params.append("dateFrom", dateFrom);
       }
@@ -68,54 +67,93 @@ const OrderHistory: React.FC = () => {
       
       // Handle the actual backend response format: { success: true, data: [...], pagination: {...} }
       const ordersArray = Array.isArray(response.data) ? response.data : [];
-      setOrderHistory(ordersArray);
-      setTotalPages(response.pagination?.totalPages || 1);
-      setTotalOrders(response.pagination?.total || 0);
+      setAllOrders(ordersArray);
+      setTotalOrders(response.pagination?.total || ordersArray.length);
     } catch (err: any) {
       console.error("❌ Failed to fetch order history:", err);
       setError(err.message || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
-      setOrderHistory([]); // Reset to empty array on error
+      setAllOrders([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Client-side filtering
+  const applyFilters = () => {
+    let filtered = [...allOrders];
 
+    // Filter by status
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(order => order.status === statusFilter);
+    }
 
+    // Filter by menu item name (search in items)
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(order => 
+        order.items.some(item => 
+          item.name.toLowerCase().includes(searchLower)
+        )
+      );
+    }
+
+    setFilteredOrders(filtered);
+    setTotalPages(Math.ceil(filtered.length / 20));
+  };
+
+  const handleSearch = () => {
+    setCurrentPage(1);
+    applyFilters();
+  };
+
+  const handleReset = () => {
+    setStatusFilter("all");
+    setSearchTerm("");
+    setDateFrom("");
+    setDateTo("");
+    setCurrentPage(1);
+    setFilteredOrders(allOrders);
+  };
+
+  // Fetch orders when date filters change
   useEffect(() => {
     fetchOrderHistory();
-  }, [currentPage, statusFilter, search, dateFrom, dateTo]);
+  }, [dateFrom, dateTo]);
 
-  const handleExport = async (format: "csv" | "xlsx") => {
+  // Apply filters when allOrders or filters change
+  useEffect(() => {
+    applyFilters();
+  }, [allOrders, statusFilter, searchTerm]);
+
+  const handleExport = async (format: "csv") => {
     try {
-      const params = new URLSearchParams({ format });
+      // Export filtered orders as CSV with only: รายการ, จำนวน, ยอดรวม, วันที่สั่ง
+      const headers = ["รายการ", "จำนวน", "ยอดรวม", "วันที่สั่ง"];
+      const csvRows = [headers.join(",")];
       
-      if (statusFilter !== "all") {
-        params.append("status", statusFilter);
-      }
-      if (search.trim()) {
-        params.append("tableNo", search.trim());
-      }
-      if (dateFrom) {
-        params.append("dateFrom", dateFrom);
-      }
-      if (dateTo) {
-        params.append("dateTo", dateTo);
-      }
-
-      const res = await fetch(`${API_URL}/api/v1/orders/export?${params}`, {
-        credentials: "include",
+      filteredOrders.forEach(order => {
+        // Create a row for each item in the order
+        order.items.forEach(item => {
+          const orderDate = order.orderCreatedAt 
+            ? formatDateTime(order.orderCreatedAt)
+            : "-";
+          
+          const row = [
+            `"${item.name}"`,
+            item.qty,
+            item.lineTotal || (item.price * item.qty),
+            `"${orderDate}"`
+          ];
+          csvRows.push(row.join(","));
+        });
       });
-
-      if (!res.ok) {
-        throw new Error("Failed to export orders");
-      }
-
-      const blob = await res.blob();
+      
+      const csvContent = csvRows.join("\n");
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `order_history_${new Date().toISOString().split('T')[0]}.${format}`;
+      a.download = `order_history_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -161,7 +199,7 @@ const OrderHistory: React.FC = () => {
   };
 
   const calculateTotalIncome = () => {
-    return orderHistory.reduce((total, order) => total + order.total, 0);
+    return filteredOrders.reduce((total, order) => total + order.total, 0);
   };
 
   const getStatusBreakdown = () => {
@@ -174,7 +212,7 @@ const OrderHistory: React.FC = () => {
     };
 
     const breakdown = Object.entries(statusConfig).map(([status, config]) => {
-      const orders = orderHistory.filter(order => order.status === status);
+      const orders = filteredOrders.filter(order => order.status === status);
       const total = orders.reduce((sum, order) => sum + order.total, 0);
       
       return {
@@ -237,7 +275,7 @@ const OrderHistory: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-green-600">จำนวนออเดอร์</p>
               <p className="text-2xl font-bold text-green-900">
-                {orderHistory.length}
+                {filteredOrders.length}
               </p>
             </div>
             <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -251,7 +289,7 @@ const OrderHistory: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-purple-600">ค่าเฉลี่ยต่อออเดอร์</p>
               <p className="text-2xl font-bold text-purple-900">
-                {orderHistory.length > 0 ? formatCurrency(calculateTotalIncome() / orderHistory.length) : formatCurrency(0)}
+                {filteredOrders.length > 0 ? formatCurrency(calculateTotalIncome() / filteredOrders.length) : formatCurrency(0)}
               </p>
             </div>
             <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
@@ -271,7 +309,7 @@ const OrderHistory: React.FC = () => {
 
 
       {/* Status Breakdown */}
-      {orderHistory.length > 0 && (
+      {filteredOrders.length > 0 && (
         <div className="bg-gray-50 border rounded-lg p-4">
           <h3 className="text-sm font-medium text-gray-700 mb-3">สถิติตามสถานะ</h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
@@ -287,47 +325,47 @@ const OrderHistory: React.FC = () => {
       )}
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-        <Input
-          placeholder="ค้นหาหมายเลขโต๊ะ..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <Input
+            placeholder="ค้นหาชื่อเมนู..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
 
-        <Select onValueChange={(v) => setStatusFilter(v as OrderStatus | "all")} value={statusFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="สถานะ" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">ทุกสถานะ</SelectItem>
-            <SelectItem value="PENDING">รอดำเนินการ</SelectItem>
-            <SelectItem value="IN_PROGRESS">กำลังทำ</SelectItem>
-            <SelectItem value="READY">พร้อมเสิร์ฟ</SelectItem>
-            <SelectItem value="SERVED">เสิร์ฟแล้ว</SelectItem>
-            <SelectItem value="CANCELLED">ยกเลิก</SelectItem>
-          </SelectContent>
-        </Select>
+          <Select onValueChange={(v) => setStatusFilter(v as OrderStatus | "all")} value={statusFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="สถานะ" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">ทุกสถานะ</SelectItem>
+              <SelectItem value="SERVED">เสิร์ฟแล้ว</SelectItem>
+              <SelectItem value="CANCELLED">ยกเลิก</SelectItem>
+            </SelectContent>
+          </Select>
 
-        <Input
-          type="date"
-          placeholder="วันที่เริ่มต้น"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-        />
+          <Input
+            type="date"
+            placeholder="วันที่เริ่มต้น"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+          />
 
-        <Input
-          type="date"
-          placeholder="วันที่สิ้นสุด"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-        />
+          <Input
+            type="date"
+            placeholder="วันที่สิ้นสุด"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+          />
+        </div>
 
-        <div className="flex gap-2">
-          <Button onClick={() => handleExport("csv")} size="sm">
-            CSV
+        <div className="flex gap-2 justify-between">
+          <Button onClick={handleReset} variant="outline">
+            🔄 รีเซ็ต
           </Button>
-          <Button variant="secondary" onClick={() => handleExport("xlsx")} size="sm">
-            Excel
+          
+          <Button onClick={() => handleExport("csv")} size="sm" variant="outline">
+            📄 ส่งออก CSV
           </Button>
         </div>
       </div>
@@ -343,11 +381,10 @@ const OrderHistory: React.FC = () => {
               <TableHead>ยอดรวม</TableHead>
               <TableHead>สถานะ</TableHead>
               <TableHead>วันที่สั่ง</TableHead>
-              <TableHead>ระยะเวลา (นาที)</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {orderHistory && orderHistory.length > 0 && orderHistory.map((order) => (
+            {filteredOrders && filteredOrders.length > 0 && filteredOrders.map((order) => (
               <TableRow key={order.id}>
                 <TableCell className="font-mono text-sm">
                   {(order.originalOrderId || order.id).slice(-8)}
@@ -378,16 +415,13 @@ const OrderHistory: React.FC = () => {
                 <TableCell className="text-sm">
                   {order.orderCreatedAt ? formatDateTime(order.orderCreatedAt) : '-'}
                 </TableCell>
-                <TableCell className="text-sm">
-                  {order.sessionDuration ? Math.round(order.sessionDuration / 60) : '-'}
-                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
 
-      {(!orderHistory || orderHistory.length === 0) && !loading && (
+      {(!filteredOrders || filteredOrders.length === 0) && !loading && (
         <div className="text-center py-8 text-gray-500">
           ไม่พบประวัติออเดอร์
         </div>
