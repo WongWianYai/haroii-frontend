@@ -29,8 +29,11 @@ import {
   List,
   MapPin,
   Zap,
+  CreditCard,
+  Loader2,
 } from "lucide-react";
 import { API_URL, API_BASE_PATH } from "@/config";
+import PaymentPopup from "@/components/payment/PaymentPopup";
 
 const statusConfig = {
   PENDING: {
@@ -104,6 +107,17 @@ export default function OrderManagement() {
   const [viewMode, setViewMode] = useState<"table" | "status">("table");
   const [showFilters, setShowFilters] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+
+  // Payment state management
+  const [paymentPopupOpen, setPaymentPopupOpen] = useState(false);
+  const [selectedTableForPayment, setSelectedTableForPayment] = useState<{
+    sessionId: string;
+    tableNo: string;
+    totalAmount: number;
+  } | null>(null);
+  const [paidTables, setPaidTables] = useState<Set<string>>(new Set());
+  const [loadingPaymentStatus, setLoadingPaymentStatus] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState<string | null>(null); // Track which table is being processed
 
   const getAuthHeaders = (): Record<string, string> => {
     // Get token from cookies
@@ -184,6 +198,33 @@ export default function OrderManagement() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPaymentStatus = async () => {
+    try {
+      setLoadingPaymentStatus(true);
+      const response = await fetch(
+        `${API_URL}${API_BASE_PATH}/billing/payment-status`,
+        {
+          credentials: "include",
+          headers: {
+            ...getAuthHeaders(),
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch payment status");
+      }
+
+      const data = await response.json();
+      setPaidTables(new Set(data.paidTableSessions));
+    } catch (error) {
+      console.error("Error fetching payment status:", error);
+      // Don't show error to user, just log it
+    } finally {
+      setLoadingPaymentStatus(false);
     }
   };
 
@@ -357,6 +398,7 @@ export default function OrderManagement() {
 
   useEffect(() => {
     fetchOrders();
+    fetchPaymentStatus();
   }, []);
 
   // Auto-refresh every 30 seconds
@@ -365,10 +407,18 @@ export default function OrderManagement() {
 
     const interval = setInterval(() => {
       fetchOrders();
+      fetchPaymentStatus();
     }, 20000);
 
     return () => clearInterval(interval);
   }, [autoRefresh]);
+
+  // Fetch payment status after orders are loaded
+  useEffect(() => {
+    if (!loading) {
+      fetchPaymentStatus();
+    }
+  }, [loading]);
 
   // Update display orders when filters change
   useEffect(() => {
@@ -500,6 +550,64 @@ export default function OrderManagement() {
     }
   };
 
+  const closeTableSession = async (tableSessionId: string) => {
+    try {
+      const response = await fetch(
+        `${API_URL}${API_BASE_PATH}/table-sessions/${tableSessionId}/close`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to close table session");
+      }
+
+      // Remove table from paidTables after successful closure
+      setPaidTables((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(tableSessionId);
+        return newSet;
+      });
+
+      // Refresh orders and payment status after closing table
+      await fetchOrders();
+      await fetchPaymentStatus();
+    } catch (err: any) {
+      console.error("Error closing table:", err);
+      setError("ไม่สามารถปิดโต๊ะได้");
+    }
+  };
+
+  const openPaymentPopup = (sessionId: string, tableNo: string, totalAmount: number) => {
+    // Prevent duplicate clicks (debouncing)
+    if (processingPayment === sessionId) {
+      console.log("Payment popup already opening for this table, ignoring duplicate click");
+      return;
+    }
+
+    setProcessingPayment(sessionId);
+    setSelectedTableForPayment({ sessionId, tableNo, totalAmount });
+    setPaymentPopupOpen(true);
+
+    // Reset processing state after a short delay
+    setTimeout(() => {
+      setProcessingPayment(null);
+    }, 1000);
+  };
+
+  const handlePaymentConfirmed = async () => {
+    // Refresh payment status from backend to get latest state
+    await fetchPaymentStatus();
+    setPaymentPopupOpen(false);
+    setSelectedTableForPayment(null);
+  };
+
   const getUrgencyLevel = (createdAt: string, status: OrderStatus) => {
     const diffMins = Math.floor(
       (new Date().getTime() - new Date(createdAt).getTime()) / 60000
@@ -584,11 +692,10 @@ export default function OrderManagement() {
                 onClick={() => setShowFilters(!showFilters)}
                 variant={showFilters ? "default" : "outline"}
                 size="sm"
-                className={`flex items-center gap-2 shadow-sm border border-gray-200 overflow-hidden ${
-                  showFilters
-                    ? "bg-[#F38DA9] text-white hover:bg-transparent hover:text-black"
-                    : ""
-                }`}
+                className={`flex items-center gap-2 shadow-sm border border-gray-200 overflow-hidden ${showFilters
+                  ? "bg-[#F38DA9] text-white hover:bg-transparent hover:text-black"
+                  : ""
+                  }`}
               >
                 <Filter className="w-4 h-4" />
                 ตัวกรอง
@@ -625,11 +732,10 @@ export default function OrderManagement() {
                     variant={selectedStatus === "ALL" ? "default" : "outline"}
                     size="sm"
                     onClick={() => setSelectedStatus("ALL")}
-                    className={`flex items-center gap-2 ${
-                      selectedStatus === "ALL"
-                        ? "bg-[#F38DA9] hover:bg-[#e37795]"
-                        : ""
-                    }`}
+                    className={`flex items-center gap-2 ${selectedStatus === "ALL"
+                      ? "bg-[#F38DA9] hover:bg-[#e37795]"
+                      : ""
+                      }`}
                   >
                     <Hash className="w-3 h-3" />
                     ทั้งหมด ({allOrders.length})
@@ -647,11 +753,10 @@ export default function OrderManagement() {
                         }
                         size="sm"
                         onClick={() => setSelectedStatus(status as OrderStatus)}
-                        className={`flex items-center gap-2 ${
-                          selectedStatus === status
-                            ? "bg-[#F38DA9] hover:bg-[#e37795]"
-                            : ""
-                        }`}
+                        className={`flex items-center gap-2 ${selectedStatus === status
+                          ? "bg-[#F38DA9] hover:bg-[#e37795]"
+                          : ""
+                          }`}
                       >
                         <StatusIcon className="w-3 h-3" />
                         {config.label} ({count})
@@ -793,14 +898,27 @@ export default function OrderManagement() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {orders.some(
-                        (order) =>
-                          getUrgencyLevel(order.createdAt, order.status) ===
-                          "high"
-                      ) && (
-                        <Badge className="bg-red-100 text-red-800 border-red-300 flex items-center gap-1">
+                      {/* Urgency badges - show based on time thresholds */}
+                      {orders.some((order) => {
+                        const diffMins = Math.floor(
+                          (new Date().getTime() - new Date(order.createdAt).getTime()) / 60000
+                        );
+                        return diffMins > 15 && order.status !== "SERVED" && order.status !== "CANCELLED";
+                      }) && (
+                        <Badge className="bg-red-100 text-red-800 border-red-300 flex items-center gap-1 animate-pulse">
                           <Bell className="w-3 h-3" />
-                          ต้องเร่งด่วน
+                          เร่งด่วน (15+ นาที)
+                        </Badge>
+                      )}
+                      {orders.some((order) => {
+                        const diffMins = Math.floor(
+                          (new Date().getTime() - new Date(order.createdAt).getTime()) / 60000
+                        );
+                        return diffMins > 10 && diffMins <= 15 && order.status !== "SERVED" && order.status !== "CANCELLED";
+                      }) && (
+                        <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 flex items-center gap-1">
+                          <Timer className="w-3 h-3" />
+                          เร่ง (10+ นาที)
                         </Badge>
                       )}
                     </div>
@@ -834,23 +952,49 @@ export default function OrderManagement() {
                   </div>
                 </div>
                 <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                  <div>
-                    <Button
-                      onClick={async () => {
-                        const token = orders?.[0]?.tableSessionId;
-                        if (token) {
-                          await clearTable(token);
-                          window.location.reload();
-                        } else {
-                          alert("No session token available for this table");
+                  <div className="flex items-center gap-2">
+                    {/* Payment button - only show if table is not paid */}
+                    {orders.length > 0 && !paidTables.has(orders[0].tableSessionId) && (
+                      <Button
+                        onClick={() => {
+                          const totalAmount = orders.reduce((sum, order) => sum + order.total, 0);
+                          openPaymentPopup(orders[0].tableSessionId, tableNo, totalAmount);
+                        }}
+                        className={`${
+                          orders.every((order) => order.status === "SERVED")
+                            ? "bg-green-600 hover:bg-green-700 active:bg-green-800"
+                            : "bg-gray-800 cursor-not-allowed"
+                        } text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg disabled:hover:scale-100 disabled:hover:shadow-none font-semibold`}
+                        size="sm"
+                        disabled={
+                          processingPayment === orders[0].tableSessionId ||
+                          !orders.every((order) => order.status === "SERVED")
                         }
-                      }}
-                      size="sm"
-                      className="ml-auto bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
-                    >
-                      <Trash2 className="w-4 h-4 mr-1.5" />
-                      เคลียร์โต๊ะ
-                    </Button>
+                      >
+                        {processingPayment === orders[0].tableSessionId ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            กำลังเปิด...
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="w-4 h-4 mr-2" />
+                            จ่ายเงิน (฿{orders.reduce((sum, order) => sum + order.total, 0).toLocaleString("th-TH")})
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    {/* Close table button - only show if table is paid */}
+                    {orders.length > 0 && paidTables.has(orders[0].tableSessionId) && (
+                      <Button
+                        onClick={() => closeTableSession(orders[0].tableSessionId)}
+                        className="bg-red-600 hover:bg-red-700 active:bg-red-800 text-white transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg font-semibold animate-in fade-in slide-in-from-right duration-300"
+                        size="sm"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        ปิดโต๊ะ
+                      </Button>
+                    )}
                   </div>
 
                   <div className="flex justify-center items-center">
@@ -884,13 +1028,11 @@ export default function OrderManagement() {
             <p className="text-gray-500 mb-6 max-w-md mx-auto">
               {selectedStatus === "ALL" && selectedTable === "ALL"
                 ? "ยังไม่มีออเดอร์เข้ามาในระบบ รอลูกค้าสั่งอาหารเข้ามา"
-                : `ไม่มีออเดอร์ที่ตรงกับตัวกรอง${
-                    selectedStatus !== "ALL"
-                      ? ` สถานะ: ${
-                          statusConfig[selectedStatus as OrderStatus]?.label
-                        }`
-                      : ""
-                  }${selectedTable !== "ALL" ? ` โต๊ะ: ${selectedTable}` : ""}`}
+                : `ไม่มีออเดอร์ที่ตรงกับตัวกรอง${selectedStatus !== "ALL"
+                  ? ` สถานะ: ${statusConfig[selectedStatus as OrderStatus]?.label
+                  }`
+                  : ""
+                }${selectedTable !== "ALL" ? ` โต๊ะ: ${selectedTable}` : ""}`}
             </p>
             {/* {(selectedStatus !== "ALL" || selectedTable !== "ALL") && (
               <Button
@@ -907,6 +1049,21 @@ export default function OrderManagement() {
           </div>
         )}
       </div>
+
+      {/* Payment Popup */}
+      {selectedTableForPayment && (
+        <PaymentPopup
+          isOpen={paymentPopupOpen}
+          onClose={() => {
+            setPaymentPopupOpen(false);
+            setSelectedTableForPayment(null);
+          }}
+          tableSessionId={selectedTableForPayment.sessionId}
+          tableNo={selectedTableForPayment.tableNo}
+          totalAmount={selectedTableForPayment.totalAmount}
+          onPaymentConfirmed={handlePaymentConfirmed}
+        />
+      )}
     </div>
   );
 }
@@ -961,9 +1118,8 @@ function OrderCard({
 
   return (
     <Card
-      className={`hover:shadow-lg transition-all duration-200 ${
-        statusConfig[order.status].bgGradient
-      } relative overflow-hidden`}
+      className={`hover:shadow-lg transition-all duration-200 ${statusConfig[order.status].bgGradient
+        } relative overflow-hidden`}
     >
       {/* Urgency indicator */}
       {urgencyLevel === "high" && (
