@@ -237,16 +237,31 @@ const OrderHistory: React.FC = () => {
 
   const getStatusBadge = (status: OrderStatus) => {
     const statusConfig = {
-      PENDING: { label: "รอดำเนินการ", variant: "secondary" as const },
-      IN_PROGRESS: { label: "กำลังทำ", variant: "default" as const },
-      READY: { label: "พร้อมเสิร์ฟ", variant: "outline" as const },
-      SERVED: { label: "เสิร์ฟแล้ว", variant: "default" as const },
-      CANCELLED: { label: "ยกเลิก", variant: "destructive" as const },
+      PENDING: { 
+        label: "รอดำเนินการ", 
+        className: "bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200" 
+      },
+      IN_PROGRESS: { 
+        label: "กำลังทำ", 
+        className: "bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200" 
+      },
+      READY: { 
+        label: "พร้อมเสิร์ฟ", 
+        className: "bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200" 
+      },
+      SERVED: { 
+        label: "เสิร์ฟแล้ว", 
+        className: "bg-green-100 text-green-800 border-green-300 hover:bg-green-200" 
+      },
+      CANCELLED: { 
+        label: "ยกเลิก", 
+        className: "bg-red-100 text-red-800 border-red-300 hover:bg-red-200" 
+      },
     };
 
     const config = statusConfig[status];
     return (
-      <Badge variant={config.variant}>
+      <Badge className={config.className}>
         {config.label}
       </Badge>
     );
