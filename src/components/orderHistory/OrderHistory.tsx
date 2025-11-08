@@ -23,7 +23,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { OrderHistoryItem, OrderHistoryResponse, OrderStatus } from "@/types";
+import { Download } from "lucide-react";
+import { OrderHistoryItem, OrderStatus } from "@/types";
 import { API_URL } from "@/config";
 
 const OrderHistory: React.FC = () => {
@@ -39,7 +40,7 @@ const OrderHistory: React.FC = () => {
   const [dateTo, setDateTo] = useState("");
   
   // Sorting states
-  type SortField = "id" | "tableNo" | "items" | "total" | "status" | "date";
+  type SortField = "total" | "date";
   type SortOrder = "asc" | "desc";
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
@@ -117,29 +118,12 @@ const OrderHistory: React.FC = () => {
     filtered.sort((a, b) => {
       let comparison = 0;
       
-      switch (sortField) {
-        case "id":
-          comparison = a.id.localeCompare(b.id);
-          break;
-        case "tableNo":
-          comparison = a.tableNo.localeCompare(b.tableNo);
-          break;
-        case "items":
-          const aItems = a.items.length;
-          const bItems = b.items.length;
-          comparison = aItems - bItems;
-          break;
-        case "total":
-          comparison = a.total - b.total;
-          break;
-        case "status":
-          comparison = a.status.localeCompare(b.status);
-          break;
-        case "date":
-          const aDate = a.orderCreatedAt ? new Date(a.orderCreatedAt).getTime() : 0;
-          const bDate = b.orderCreatedAt ? new Date(b.orderCreatedAt).getTime() : 0;
-          comparison = aDate - bDate;
-          break;
+      if (sortField === "total") {
+        comparison = a.total - b.total;
+      } else if (sortField === "date") {
+        const aDate = a.orderCreatedAt ? new Date(a.orderCreatedAt).getTime() : 0;
+        const bDate = b.orderCreatedAt ? new Date(b.orderCreatedAt).getTime() : 0;
+        comparison = aDate - bDate;
       }
       
       return sortOrder === "asc" ? comparison : -comparison;
@@ -170,11 +154,6 @@ const OrderHistory: React.FC = () => {
     setSelectedOrder(null);
   };
 
-  const handleSearch = () => {
-    setCurrentPage(1);
-    applyFilters();
-  };
-
   const handleReset = () => {
     setStatusFilter("all");
     setSearchTerm("");
@@ -196,35 +175,119 @@ const OrderHistory: React.FC = () => {
     applyFilters();
   }, [allOrders, statusFilter, searchTerm, sortField, sortOrder]);
 
-  const handleExport = async (format: "csv") => {
+  const handleExport = () => {
     try {
-      // Export filtered orders as CSV with only: รายการ, จำนวน, ยอดรวม, วันที่สั่ง
-      const headers = ["รายการ", "จำนวน", "ยอดรวม", "วันที่สั่ง"];
-      const csvRows = [headers.join(",")];
+      const csvRows: string[] = [];
+      
+      // ============================================
+      // HEADER SECTION
+      // ============================================
+      csvRows.push("=================================================");
+      csvRows.push("         รายงานประวัติออเดอร์");
+      csvRows.push(`         วันที่ออกรายงาน: ${new Date().toLocaleDateString('th-TH')}`);
+      csvRows.push("=================================================");
+      csvRows.push("");
+      
+      // ============================================
+      // TABLE 1: รายละเอียดออเดอร์
+      // ============================================
+      csvRows.push("--- ตารางที่ 1: รายละเอียดออเดอร์ ---");
+      csvRows.push("");
+      
+      const headers1 = ["วันที่สั่ง", "รายการ", "จำนวน", "ยอดรวม (บาท)"];
+      csvRows.push(headers1.join(","));
+      csvRows.push("---,---,---,---"); // Separator line
+      
+      let totalIncome = 0;
       
       filteredOrders.forEach(order => {
-        // Create a row for each item in the order
         order.items.forEach(item => {
           const orderDate = order.orderCreatedAt 
             ? formatDateTime(order.orderCreatedAt)
             : "-";
           
+          const lineTotal = item.lineTotal || (item.price * item.qty);
+          totalIncome += lineTotal;
+          
           const row = [
+            `"${orderDate}"`,
             `"${item.name}"`,
             item.qty,
-            item.lineTotal || (item.price * item.qty),
-            `"${orderDate}"`
+            lineTotal.toFixed(2)
           ];
           csvRows.push(row.join(","));
         });
       });
       
+      // Total section
+      csvRows.push("---,---,---,---");
+      csvRows.push(`"","","รายได้รวมทั้งหมด:",${totalIncome.toFixed(2)}`);
+      csvRows.push("");
+      csvRows.push("");
+      
+      // ============================================
+      // TABLE 2: เมนูยอดนิยม Top 3
+      // ============================================
+      csvRows.push("--- ตารางที่ 2: เมนูยอดนิยม Top 3 ---");
+      csvRows.push("");
+      
+      // Calculate menu statistics
+      const menuStats = new Map<string, { qty: number; income: number }>();
+      
+      filteredOrders.forEach(order => {
+        order.items.forEach(item => {
+          const existing = menuStats.get(item.name) || { qty: 0, income: 0 };
+          const lineTotal = item.lineTotal || (item.price * item.qty);
+          
+          menuStats.set(item.name, {
+            qty: existing.qty + item.qty,
+            income: existing.income + lineTotal
+          });
+        });
+      });
+      
+      // Sort by quantity and get top 3
+      const sortedMenu = Array.from(menuStats.entries())
+        .sort((a, b) => b[1].qty - a[1].qty)
+        .slice(0, 3);
+      
+      const headers2 = ["อันดับ", "ชื่อเมนู", "จำนวนที่สั่ง (รายการ)", "รายได้รวม (บาท)"];
+      csvRows.push(headers2.join(","));
+      csvRows.push("---,---,---,---");
+      
+      sortedMenu.forEach(([menuName, stats], index) => {
+        const medals = ["🥇", "🥈", "🥉"];
+        const row = [
+          `"${medals[index]} ${index + 1}"`,
+          `"${menuName}"`,
+          stats.qty,
+          stats.income.toFixed(2)
+        ];
+        csvRows.push(row.join(","));
+      });
+      
+      // Top 3 summary
+      const totalQty = sortedMenu.reduce((sum, [, stats]) => sum + stats.qty, 0);
+      const totalRevenue = sortedMenu.reduce((sum, [, stats]) => sum + stats.income, 0);
+      csvRows.push("---,---,---,---");
+      csvRows.push(`"","รวม Top 3:",${totalQty},${totalRevenue.toFixed(2)}`);
+      
+      // ============================================
+      // FOOTER
+      // ============================================
+      csvRows.push("");
+      csvRows.push("=================================================");
+      csvRows.push(`จำนวนออเดอร์ทั้งหมด: ${filteredOrders.length} รายการ`);
+      csvRows.push(`สร้างโดย: ระบบ Haroii`);
+      csvRows.push("=================================================");
+      
+      // Create and download CSV
       const csvContent = csvRows.join("\n");
       const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `order_history_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `รายงานออเดอร์_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -450,8 +513,9 @@ const OrderHistory: React.FC = () => {
             🔄 รีเซ็ต
           </Button>
           
-          <Button onClick={() => handleExport("csv")} size="sm" variant="outline">
-            📄 ส่งออก CSV
+          <Button onClick={handleExport} size="sm" variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            ดาวน์โหลด CSV
           </Button>
         </div>
       </div>
