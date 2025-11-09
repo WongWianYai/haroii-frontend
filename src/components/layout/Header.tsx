@@ -102,11 +102,7 @@ export default function Header({ restaurant, activeTab, onTabChange }: HeaderPro
                     </MenubarTrigger>
                 </MenubarMenu>
 
-                <MenubarMenu>
-                    <MenubarTrigger className="cursor-pointer text-white hover:text-white/80 hover:bg-white/10 transition-colors px-2 py-1.5 rounded text-xs md:text-sm">
-                        บัญชี
-                    </MenubarTrigger>
-                </MenubarMenu>
+                
             </Menubar>
 
             <div className="flex items-center flex-shrink-0 order-2 md:order-3">
