@@ -6,8 +6,7 @@ import Header from "@/components/layout/Header";
 import MenuManagementTab from "@/components/menu/MenuManagementTab";
 import RestaurantForm from "@/components/restaurant/RestaurantForm";
 import OrderManagement from "@/components/orders/OrderManagement";
-import OrderHistory from "@/components/orderHistory/OrderHistory"
-import { API_URL } from "@/config";
+import OrderHistory from "@/components/orderHistory/OrderHistory";
 
 export default function MenuManagement() {
   const [activeTab, setActiveTab] = useState<TabType>("orders");
@@ -24,7 +23,7 @@ export default function MenuManagement() {
     type: "",
     owner: "",
     openTime: "",
-    closeTime: ""
+    closeTime: "",
   });
 
   const [originalRestaurant, setOriginalRestaurant] = useState<Restaurant>({
@@ -35,7 +34,7 @@ export default function MenuManagement() {
     type: "",
     owner: "",
     openTime: "",
-    closeTime: ""
+    closeTime: "",
   });
 
   const [owner, setOwner] = useState<Owner>({
@@ -59,7 +58,7 @@ export default function MenuManagement() {
       try {
         const [meData, menuData] = await Promise.all([
           apiClient.getMe(),
-          apiClient.getMenuItems()
+          apiClient.getMenuItems(),
         ]);
 
         setRestaurant(meData.restaurant);
@@ -67,8 +66,13 @@ export default function MenuManagement() {
         setOwner(meData.user);
         setOriginalOwner(meData.user);
         setMenuItems(menuData);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+      
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Unknown error");
+        }
       } finally {
         setLoading(false);
       }
@@ -102,7 +106,7 @@ export default function MenuManagement() {
     try {
       const [updatedRestaurant, updatedOwner] = await Promise.all([
         apiClient.updateRestaurant(restaurant),
-        apiClient.updateOwner(owner)
+        apiClient.updateOwner(owner),
       ]);
 
       setOriginalRestaurant(updatedRestaurant);
@@ -126,10 +130,6 @@ export default function MenuManagement() {
       console.error("Error fetching menu items:", err);
     }
   };
-
-  
-
-
 
   // Loading and error states
   if (loading) {
@@ -183,12 +183,8 @@ export default function MenuManagement() {
             onToggleEdit={handleToggleEdit}
           />
         )}
-        {activeTab === "orders" && (
-          <OrderManagement />
-        )}
-        {activeTab === "history" && (
-          <OrderHistory />
-        )}
+        {activeTab === "orders" && <OrderManagement />}
+        {activeTab === "history" && <OrderHistory />}
       </div>
     </div>
   );

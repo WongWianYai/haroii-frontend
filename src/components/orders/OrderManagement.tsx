@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Order, OrderStatus } from "@/types";
+import { Order, OrderItem, OrderStatus } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,6 @@ import {
   CheckCircle,
   Utensils,
   RefreshCw,
-  StickyNote,
   Calendar,
   Hash,
   Trash2,
@@ -20,15 +19,11 @@ import {
   AlertTriangle,
   Save,
   Plus,
-  Users,
   Timer,
   Bell,
   Eye,
   Filter,
-  Grid3X3,
-  List,
   MapPin,
-  Zap,
   CreditCard,
   Loader2,
 } from "lucide-react";
@@ -103,7 +98,7 @@ export default function OrderManagement() {
   );
   const [selectedTable, setSelectedTable] = useState<string>("ALL");
   const [editingOrder, setEditingOrder] = useState<string | null>(null);
-  const [editingItems, setEditingItems] = useState<any[]>([]);
+  const [editingItems, setEditingItems] = useState<OrderItem[]>([]);
   const [viewMode, setViewMode] = useState<"table" | "status">("table");
   const [showFilters, setShowFilters] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -116,7 +111,7 @@ export default function OrderManagement() {
     totalAmount: number;
   } | null>(null);
   const [paidTables, setPaidTables] = useState<Set<string>>(new Set());
-  const [loadingPaymentStatus, setLoadingPaymentStatus] = useState(false);
+
   const [processingPayment, setProcessingPayment] = useState<string | null>(null); // Track which table is being processed
 
   const getAuthHeaders = (): Record<string, string> => {
@@ -146,8 +141,13 @@ export default function OrderManagement() {
         const session = await response.json();
         return session.tableNo || "N/A";
       }
-    } catch (err) {
+    } catch (err :unknown) {
       console.error("Failed to fetch table number:", err);
+      if (err instanceof Error) {
+      setError(err.message);
+    } else {
+      setError("Unknown error");
+    }
     }
     return "N/A";
   };
@@ -194,8 +194,12 @@ export default function OrderManagement() {
           sortedOrders.filter((order: Order) => order.status === selectedStatus)
         );
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      if (err instanceof Error) {
       setError(err.message);
+    } else {
+      setError("Unknown error");
+    }
     } finally {
       setLoading(false);
     }
@@ -203,7 +207,7 @@ export default function OrderManagement() {
 
   const fetchPaymentStatus = async () => {
     try {
-      setLoadingPaymentStatus(true);
+   
       const response = await fetch(
         `${API_URL}${API_BASE_PATH}/billing/payment-status`,
         {
@@ -220,11 +224,16 @@ export default function OrderManagement() {
 
       const data = await response.json();
       setPaidTables(new Set(data.paidTableSessions));
-    } catch (error) {
-      console.error("Error fetching payment status:", error);
+    } catch (err: unknown) {
+      console.error("Error fetching payment status");
+      if (err instanceof Error) {
+      setError(err.message);
+    } else {
+      setError("Unknown error");
+    }
       // Don't show error to user, just log it
     } finally {
-      setLoadingPaymentStatus(false);
+     
     }
   };
 
@@ -253,8 +262,12 @@ export default function OrderManagement() {
 
       // Refresh orders after update
       await fetchOrders();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      if (err instanceof Error) {
       setError(err.message);
+    } else {
+      setError("Unknown error");
+    }
     } finally {
       setUpdatingOrder(null);
     }
@@ -372,8 +385,12 @@ export default function OrderManagement() {
       // Refresh orders and exit editing mode
       await fetchOrders();
       cancelEditing();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      if (err instanceof Error) {
       setError(err.message);
+    } else {
+      setError("Unknown error");
+    }
     } finally {
       setUpdatingOrder(null);
     }
@@ -389,8 +406,12 @@ export default function OrderManagement() {
       setUpdatingOrder(orderId);
       await updateOrderStatus(orderId, "CANCELLED" as OrderStatus);
       cancelEditing(); // Exit editing mode if active
-    } catch (err: any) {
+    } catch (err: unknown) {
+     if (err instanceof Error) {
       setError(err.message);
+    } else {
+      setError("Unknown error");
+    }
     } finally {
       setUpdatingOrder(null);
     }
@@ -545,8 +566,14 @@ export default function OrderManagement() {
         throw new Error(err.message);
       }
       const result = res.json();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+      setError(err.message);
       console.log("เคลียร์โต๊ะไม่สำเร็จ", err.message);
+    } else {
+      setError("Unknown error");
+    }
+      
     }
   };
 
@@ -578,9 +605,16 @@ export default function OrderManagement() {
       // Refresh orders and payment status after closing table
       await fetchOrders();
       await fetchPaymentStatus();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error closing table:", err);
-      setError("ไม่สามารถปิดโต๊ะได้");
+      if (err instanceof Error) {
+      
+       setError("ไม่สามารถปิดโต๊ะได้");
+    } else {
+      setError("Unknown error");
+    }
+      
+     
     }
   };
 
@@ -657,35 +691,7 @@ export default function OrderManagement() {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* View mode toggle */}
-              {/* <div className="flex items-center  rounded-lg p-1">
-                <Button
-                  onClick={() => setViewMode("table")}
-                  variant={viewMode === "table" ? "default" : "ghost"}
-                  size="sm"
-                  className={`flex items-center gap-2 ${
-                    viewMode === "table"
-                      ? "bg-[#F38DA9] text-white shadow-sm"
-                      : ""
-                  } hover:bg-transparent border border-gray-200`}
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                  ตามโต๊ะ
-                </Button>
-                <Button
-                  onClick={() => setViewMode("status")}
-                  variant={viewMode === "status" ? "default" : "ghost"}
-                  size="sm"
-                  className={`flex items-center gap-2 ${
-                    viewMode === "status"
-                      ? "bg-[#F38DA9] shadow-sm text-white"
-                      : ""
-                  } hover:bg-transparent border border-gray-200`}
-                >
-                  <List className="w-4 h-4" />
-                  ตามสถานะ
-                </Button>
-              </div> */}
+              
 
               {/* Filter toggle */}
               <Button
@@ -766,69 +772,7 @@ export default function OrderManagement() {
                 </div>
               </div>
 
-              {/* Table Filter */}
-              {/* <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  กรองตามโต๊ะ
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant={selectedTable === "ALL" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedTable("ALL")}
-                    className={`flex items-center gap-2 ${
-                      selectedTable === "ALL"
-                        ? "bg-[#F38DA9] hover:bg-[#e37795]"
-                        : ""
-                    }`}
-                  >
-                    <Users className="w-3 h-3" />
-                    ทุกโต๊ะ ({allOrders.length})
-                  </Button>
-                  {Array.from(
-                    new Set(
-                      allOrders.map((order) => order.tableNo).filter(Boolean)
-                    )
-                  )
-                    .sort((a, b) => parseInt(a!) - parseInt(b!))
-                    .map((tableNo) => {
-                      const count = allOrders.filter(
-                        (order) => order.tableNo === tableNo
-                      ).length;
-                      const urgentCount = allOrders.filter(
-                        (order) =>
-                          order.tableNo === tableNo &&
-                          getUrgencyLevel(order.createdAt, order.status) ===
-                            "high"
-                      ).length;
-
-                      return (
-                        <Button
-                          key={tableNo}
-                          variant={
-                            selectedTable === tableNo ? "default" : "outline"
-                          }
-                          size="sm"
-                          onClick={() => setSelectedTable(tableNo!)}
-                          className={`flex items-center gap-2 relative ${
-                            selectedTable === tableNo
-                              ? "bg-[#F38DA9] hover:bg-[#e37795]"
-                              : ""
-                          }`}
-                        >
-                          <MapPin className="w-3 h-3" />
-                          โต๊ะ {tableNo} ({count})
-                          {urgentCount > 0 && (
-                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
-                              <Bell className="w-2 h-2 text-white" />
-                            </div>
-                          )}
-                        </Button>
-                      );
-                    })}
-                </div>
-              </div> */}
+           
 
               {/* Quick Actions */}
               <div className="flex items-center justify-between pt-2 border-t border-gray-200">
@@ -1034,18 +978,6 @@ export default function OrderManagement() {
                   : ""
                 }${selectedTable !== "ALL" ? ` โต๊ะ: ${selectedTable}` : ""}`}
             </p>
-            {/* {(selectedStatus !== "ALL" || selectedTable !== "ALL") && (
-              <Button
-                onClick={() => {
-                  setSelectedStatus("ALL");
-                  setSelectedTable("ALL");
-                }}
-                className="bg-[#F38DA9] hover:bg-[#e37795] flex items-center gap-2 justify-center"
-              >
-                <Eye className="w-4 h-4" />
-                ดูออเดอร์ทั้งหมด
-              </Button>
-            )} */}
           </div>
         )}
       </div>
@@ -1071,9 +1003,9 @@ export default function OrderManagement() {
 // Enhanced Order Card Component
 interface OrderCardProps {
   order: Order;
-  config: any;
+  config: (typeof statusConfig)[OrderStatus];
   editingOrder: string | null;
-  editingItems: any[];
+  editingItems: OrderItem[];
   updatingOrder: string | null;
   onStartEdit: (orderId: string) => void;
   onCancelEdit: () => void;

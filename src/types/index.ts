@@ -39,7 +39,7 @@ export interface OrderItem {
   price: number;
   qty: number;
   note?: string;
-  options?: any;
+  options?: unknown;
   lineTotal: number;
 }
 

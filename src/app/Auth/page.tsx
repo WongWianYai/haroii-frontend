@@ -55,9 +55,14 @@ function Auth() {
       const result = await res.json();
       console.log("Login success", result);
       router.push("/MenuManagement");
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
+    } catch (err: unknown) {
+        if (err instanceof Error) {
+    setError(err.message);
+  } else {
+    setError("Unknown error");
+  }
+} 
+     finally {
       setLoading(false);
     }
   };
@@ -97,11 +102,15 @@ function Auth() {
       const result = await res.json();
       console.log("Register success", result);
       setIsLogin(true); // Switch to login form after successful registration
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err: unknown) {
+       if (err instanceof Error) {
+    setError(err.message);
+  } else {
+    setError("Unknown error");
+  }
+} finally {
+  setLoading(false);
+    } 
   };
 
   const toggleMode = () => {

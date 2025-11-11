@@ -82,9 +82,13 @@ export default function PaymentPopup({
       setQrCodeUrl(data.qrCodeUrl);
       setPaymentId(data.paymentId);
       setRetryCount(0); // Reset retry count on success
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error generating QR code:", err);
-      setError(err.message || "เกิดข้อผิดพลาดในการสร้าง QR Code กรุณาลองใหม่อีกครั้ง");
+        if (err instanceof Error) {
+    setError(err.message);
+  } else {
+    setError("Unknown error");
+  }
       setRetryCount(prev => prev + 1);
     } finally {
       setLoading(false);
@@ -144,9 +148,13 @@ export default function PaymentPopup({
       
       // Close popup after successful confirmation
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error confirming payment:", err);
-      setError(err.message || "เกิดข้อผิดพลาดในการยืนยันการชำระเงิน กรุณาลองใหม่อีกครั้ง");
+        if (err instanceof Error) {
+    setError(err.message);
+  } else {
+    setError("Unknown error");
+  }
     } finally {
       setConfirming(false);
       confirmingRef.current = false;
@@ -268,7 +276,7 @@ export default function PaymentPopup({
                   <p className="text-sm text-blue-800 text-center leading-relaxed">
                     กรุณาสแกน QR Code เพื่อชำระเงิน
                     <br />
-                    หลังจากชำระเงินแล้ว กดปุ่ม "ยืนยันการชำระเงิน"
+                    หลังจากชำระเงินแล้ว กดปุ่ม &quot;ยืนยันการชำระเงิน&quot;
                   </p>
                 </div>
 

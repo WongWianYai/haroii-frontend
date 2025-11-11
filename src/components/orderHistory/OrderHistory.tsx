@@ -32,23 +32,25 @@ const OrderHistory: React.FC = () => {
   const [filteredOrders, setFilteredOrders] = useState<OrderHistoryItem[]>([]); // Filtered orders for display
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Filter states
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  
+
   // Sorting states
   type SortField = "total" | "date";
   type SortOrder = "asc" | "desc";
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
-  
+
   // Modal state
-  const [selectedOrder, setSelectedOrder] = useState<OrderHistoryItem | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderHistoryItem | null>(
+    null
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
@@ -77,18 +79,25 @@ const OrderHistory: React.FC = () => {
       });
 
       if (!res.ok) {
-        throw new Error(`Failed to fetch order history: ${res.status} ${res.statusText}`);
+        throw new Error(
+          `Failed to fetch order history: ${res.status} ${res.statusText}`
+        );
       }
 
       const response = await res.json();
-      
+
       // Handle the actual backend response format: { success: true, data: [...], pagination: {...} }
       const ordersArray = Array.isArray(response.data) ? response.data : [];
       setAllOrders(ordersArray);
       setTotalOrders(response.pagination?.total || ordersArray.length);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("❌ Failed to fetch order history:", err);
-      setError(err.message || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
+
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Unknown error");
+      }
       setAllOrders([]);
     } finally {
       setLoading(false);
@@ -101,14 +110,14 @@ const OrderHistory: React.FC = () => {
 
     // Filter by status
     if (statusFilter !== "all") {
-      filtered = filtered.filter(order => order.status === statusFilter);
+      filtered = filtered.filter((order) => order.status === statusFilter);
     }
 
     // Filter by menu item name (search in items)
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(order => 
-        order.items.some(item => 
+      filtered = filtered.filter((order) =>
+        order.items.some((item) =>
           item.name.toLowerCase().includes(searchLower)
         )
       );
@@ -117,15 +126,19 @@ const OrderHistory: React.FC = () => {
     // Apply sorting
     filtered.sort((a, b) => {
       let comparison = 0;
-      
+
       if (sortField === "total") {
         comparison = a.total - b.total;
       } else if (sortField === "date") {
-        const aDate = a.orderCreatedAt ? new Date(a.orderCreatedAt).getTime() : 0;
-        const bDate = b.orderCreatedAt ? new Date(b.orderCreatedAt).getTime() : 0;
+        const aDate = a.orderCreatedAt
+          ? new Date(a.orderCreatedAt).getTime()
+          : 0;
+        const bDate = b.orderCreatedAt
+          ? new Date(b.orderCreatedAt).getTime()
+          : 0;
         comparison = aDate - bDate;
       }
-      
+
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
@@ -178,36 +191,39 @@ const OrderHistory: React.FC = () => {
   const handleExport = () => {
     try {
       const csvRows: string[] = [];
-      
-      
+
       const headers1 = ["วันที่สั่ง", "รายการ", "จำนวน", "ยอดรวม (บาท)"];
       csvRows.push(headers1.join(","));
-      
-      filteredOrders.forEach(order => {
-        order.items.forEach(item => {
-          const orderDate = order.orderCreatedAt 
+
+      filteredOrders.forEach((order) => {
+        order.items.forEach((item) => {
+          const orderDate = order.orderCreatedAt
             ? formatDateTime(order.orderCreatedAt)
             : "-";
-          
-          const lineTotal = item.lineTotal || (item.price * item.qty);
-          
+
+          const lineTotal = item.lineTotal || item.price * item.qty;
+
           const row = [
             `"${orderDate}"`,
             `"${item.name}"`,
             item.qty,
-            lineTotal.toFixed(2)
+            lineTotal.toFixed(2),
           ];
           csvRows.push(row.join(","));
         });
       });
-      
+
       // Create and download CSV
       const csvContent = csvRows.join("\n");
-      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob(["\uFEFF" + csvContent], {
+        type: "text/csv;charset=utf-8;",
+      });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `รายงานออเดอร์_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `รายงานออเดอร์_${
+        new Date().toISOString().split("T")[0]
+      }.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -220,50 +236,50 @@ const OrderHistory: React.FC = () => {
 
   const getStatusBadge = (status: OrderStatus) => {
     const statusConfig = {
-      PENDING: { 
-        label: "รอดำเนินการ", 
-        className: "bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200" 
+      PENDING: {
+        label: "รอดำเนินการ",
+        className:
+          "bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200",
       },
-      IN_PROGRESS: { 
-        label: "กำลังทำ", 
-        className: "bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200" 
+      IN_PROGRESS: {
+        label: "กำลังทำ",
+        className:
+          "bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200",
       },
-      READY: { 
-        label: "พร้อมเสิร์ฟ", 
-        className: "bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200" 
+      READY: {
+        label: "พร้อมเสิร์ฟ",
+        className:
+          "bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200",
       },
-      SERVED: { 
-        label: "เสิร์ฟแล้ว", 
-        className: "bg-green-100 text-green-800 border-green-300 hover:bg-green-200" 
+      SERVED: {
+        label: "เสิร์ฟแล้ว",
+        className:
+          "bg-green-100 text-green-800 border-green-300 hover:bg-green-200",
       },
-      CANCELLED: { 
-        label: "ยกเลิก", 
-        className: "bg-red-100 text-red-800 border-red-300 hover:bg-red-200" 
+      CANCELLED: {
+        label: "ยกเลิก",
+        className: "bg-red-100 text-red-800 border-red-300 hover:bg-red-200",
       },
     };
 
     const config = statusConfig[status];
-    return (
-      <Badge className={config.className}>
-        {config.label}
-      </Badge>
-    );
+    return <Badge className={config.className}>{config.label}</Badge>;
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('th-TH', {
-      style: 'currency',
-      currency: 'THB',
+    return new Intl.NumberFormat("th-TH", {
+      style: "currency",
+      currency: "THB",
     }).format(amount);
   };
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('th-TH', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(dateString).toLocaleString("th-TH", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -281,9 +297,9 @@ const OrderHistory: React.FC = () => {
     };
 
     const breakdown = Object.entries(statusConfig).map(([status, config]) => {
-      const orders = filteredOrders.filter(order => order.status === status);
+      const orders = filteredOrders.filter((order) => order.status === status);
       const total = orders.reduce((sum, order) => sum + order.total, 0);
-      
+
       return {
         status: status as OrderStatus,
         count: orders.length,
@@ -293,7 +309,7 @@ const OrderHistory: React.FC = () => {
       };
     });
 
-    return breakdown.filter(item => item.count > 0);
+    return breakdown.filter((item) => item.count > 0);
   };
 
   if (loading) {
@@ -356,9 +372,15 @@ const OrderHistory: React.FC = () => {
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-purple-600">ค่าเฉลี่ยต่อออเดอร์</p>
+              <p className="text-sm font-medium text-purple-600">
+                ค่าเฉลี่ยต่อออเดอร์
+              </p>
               <p className="text-2xl font-bold text-purple-900">
-                {filteredOrders.length > 0 ? formatCurrency(calculateTotalIncome() / filteredOrders.length) : formatCurrency(0)}
+                {filteredOrders.length > 0
+                  ? formatCurrency(
+                      calculateTotalIncome() / filteredOrders.length
+                    )
+                  : formatCurrency(0)}
               </p>
             </div>
             <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
@@ -367,28 +389,34 @@ const OrderHistory: React.FC = () => {
           </div>
           {(dateFrom || dateTo) && (
             <div className="mt-2 text-xs text-purple-600">
-              {dateFrom && dateTo ? `${dateFrom} ถึง ${dateTo}` : 
-               dateFrom ? `ตั้งแต่ ${dateFrom}` : 
-               `จนถึง ${dateTo}`}
+              {dateFrom && dateTo
+                ? `${dateFrom} ถึง ${dateTo}`
+                : dateFrom
+                ? `ตั้งแต่ ${dateFrom}`
+                : `จนถึง ${dateTo}`}
             </div>
           )}
         </div>
       </div>
 
-
-
       {/* Status Breakdown */}
       {filteredOrders.length > 0 && (
         <div className="bg-gray-50 border rounded-lg p-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">สถิติตามสถานะ</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-3">
+            สถิติตามสถานะ
+          </h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-            {getStatusBreakdown().map(({ status, count, total, label, color }) => (
-              <div key={status} className="text-center">
-                <div className={`text-lg font-bold ${color}`}>{count}</div>
-                <div className="text-xs text-gray-600">{label}</div>
-                <div className="text-xs font-medium">{formatCurrency(total)}</div>
-              </div>
-            ))}
+            {getStatusBreakdown().map(
+              ({ status, count, total, label, color }) => (
+                <div key={status} className="text-center">
+                  <div className={`text-lg font-bold ${color}`}>{count}</div>
+                  <div className="text-xs text-gray-600">{label}</div>
+                  <div className="text-xs font-medium">
+                    {formatCurrency(total)}
+                  </div>
+                </div>
+              )
+            )}
           </div>
         </div>
       )}
@@ -402,7 +430,10 @@ const OrderHistory: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
 
-          <Select onValueChange={(v) => setStatusFilter(v as OrderStatus | "all")} value={statusFilter}>
+          <Select
+            onValueChange={(v) => setStatusFilter(v as OrderStatus | "all")}
+            value={statusFilter}
+          >
             <SelectTrigger>
               <SelectValue placeholder="สถานะ" />
             </SelectTrigger>
@@ -432,7 +463,7 @@ const OrderHistory: React.FC = () => {
           <Button onClick={handleReset} variant="outline">
             🔄 รีเซ็ต
           </Button>
-          
+
           <Button onClick={handleExport} size="sm" variant="outline">
             <Download className="w-4 h-4 mr-2" />
             ดาวน์โหลด CSV
@@ -448,7 +479,7 @@ const OrderHistory: React.FC = () => {
               <TableHead>รหัสออเดอร์</TableHead>
               <TableHead>โต๊ะ</TableHead>
               <TableHead>รายการ</TableHead>
-              <TableHead 
+              <TableHead
                 className="cursor-pointer hover:bg-gray-100 select-none"
                 onClick={() => handleSort("total")}
               >
@@ -460,7 +491,7 @@ const OrderHistory: React.FC = () => {
                 </div>
               </TableHead>
               <TableHead>สถานะ</TableHead>
-              <TableHead 
+              <TableHead
                 className="cursor-pointer hover:bg-gray-100 select-none"
                 onClick={() => handleSort("date")}
               >
@@ -474,43 +505,45 @@ const OrderHistory: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredOrders && filteredOrders.length > 0 && filteredOrders.map((order) => (
-              <TableRow 
-                key={order.id}
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleOrderClick(order)}
-              >
-                <TableCell className="font-mono text-sm">
-                  {(order.originalOrderId || order.id).slice(-8)}
-                </TableCell>
-                <TableCell className="font-semibold">
-                  {order.tableNo}
-                </TableCell>
-                <TableCell>
-                  <div className="space-y-1">
-                    {order.items.slice(0, 2).map((item, idx) => (
-                      <div key={idx} className="text-sm">
-                        {item.name} x{item.qty}
-                      </div>
-                    ))}
-                    {order.items.length > 2 && (
-                      <div className="text-xs text-gray-500">
-                        และอีก {order.items.length - 2} รายการ
-                      </div>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="font-semibold">
-                  {formatCurrency(order.total)}
-                </TableCell>
-                <TableCell>
-                  {getStatusBadge(order.status)}
-                </TableCell>
-                <TableCell className="text-sm">
-                  {order.orderCreatedAt ? formatDateTime(order.orderCreatedAt) : '-'}
-                </TableCell>
-              </TableRow>
-            ))}
+            {filteredOrders &&
+              filteredOrders.length > 0 &&
+              filteredOrders.map((order) => (
+                <TableRow
+                  key={order.id}
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleOrderClick(order)}
+                >
+                  <TableCell className="font-mono text-sm">
+                    {(order.originalOrderId || order.id).slice(-8)}
+                  </TableCell>
+                  <TableCell className="font-semibold">
+                    {order.tableNo}
+                  </TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      {order.items.slice(0, 2).map((item, idx) => (
+                        <div key={idx} className="text-sm">
+                          {item.name} x{item.qty}
+                        </div>
+                      ))}
+                      {order.items.length > 2 && (
+                        <div className="text-xs text-gray-500">
+                          และอีก {order.items.length - 2} รายการ
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-semibold">
+                    {formatCurrency(order.total)}
+                  </TableCell>
+                  <TableCell>{getStatusBadge(order.status)}</TableCell>
+                  <TableCell className="text-sm">
+                    {order.orderCreatedAt
+                      ? formatDateTime(order.orderCreatedAt)
+                      : "-"}
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </div>
@@ -527,20 +560,22 @@ const OrderHistory: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
           >
             ก่อนหน้า
           </Button>
-          
+
           <span className="text-sm text-gray-600">
             หน้า {currentPage} จาก {totalPages}
           </span>
-          
+
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
             disabled={currentPage === totalPages}
           >
             ถัดไป
@@ -552,9 +587,11 @@ const OrderHistory: React.FC = () => {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">รายละเอียดออเดอร์</DialogTitle>
+            <DialogTitle className="text-xl font-bold">
+              รายละเอียดออเดอร์
+            </DialogTitle>
           </DialogHeader>
-          
+
           {selectedOrder && (
             <div className="space-y-4">
               {/* Order Info */}
@@ -565,16 +602,22 @@ const OrderHistory: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">โต๊ะ</p>
-                  <p className="font-semibold text-lg">{selectedOrder.tableNo}</p>
+                  <p className="font-semibold text-lg">
+                    {selectedOrder.tableNo}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">สถานะ</p>
-                  <div className="mt-1">{getStatusBadge(selectedOrder.status)}</div>
+                  <div className="mt-1">
+                    {getStatusBadge(selectedOrder.status)}
+                  </div>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">วันที่สั่ง</p>
                   <p className="font-medium">
-                    {selectedOrder.orderCreatedAt ? formatDateTime(selectedOrder.orderCreatedAt) : '-'}
+                    {selectedOrder.orderCreatedAt
+                      ? formatDateTime(selectedOrder.orderCreatedAt)
+                      : "-"}
                   </p>
                 </div>
               </div>
@@ -584,7 +627,10 @@ const OrderHistory: React.FC = () => {
                 <h3 className="font-semibold text-lg mb-3">รายการอาหาร</h3>
                 <div className="space-y-2">
                   {selectedOrder.items.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-start p-3 bg-gray-50 rounded">
+                    <div
+                      key={idx}
+                      className="flex justify-between items-start p-3 bg-gray-50 rounded"
+                    >
                       <div className="flex-1">
                         <p className="font-medium">{item.name}</p>
                         {item.note && (
@@ -596,7 +642,9 @@ const OrderHistory: React.FC = () => {
                       <div className="text-right ml-4">
                         <p className="text-sm text-gray-600">x{item.qty}</p>
                         <p className="font-semibold">
-                          {formatCurrency(item.lineTotal || (item.price * item.qty))}
+                          {formatCurrency(
+                            item.lineTotal || item.price * item.qty
+                          )}
                         </p>
                       </div>
                     </div>

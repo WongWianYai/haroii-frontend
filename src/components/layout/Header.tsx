@@ -18,9 +18,9 @@ import {
     LogOut
 } from "lucide-react";
 import { TabType, Restaurant } from "@/types";
-import { useState } from "react";
 import { API_URL } from "@/config";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface HeaderProps {
     restaurant: Restaurant;
@@ -49,10 +49,16 @@ export default function Header({ restaurant, activeTab, onTabChange }: HeaderPro
             const result = await res.json();
             console.log("logout success", result);
             router.push("/Auth");
-        } catch (err: any) {
-            console.error("Logout error:", err.message);
+        } 
+            
+            catch (err: unknown) {
+  if (err instanceof Error) {
+        console.log("ออกจากระบบไม่สำเร็จ" ,err.message )
+  } 
+}
+
         }
-    };
+ 
       
     return (
         <header className="w-full bg-[#F38DA9] px-4 py-2 flex flex-wrap items-center justify-between gap-2 fixed top-0 z-50">
@@ -109,10 +115,12 @@ export default function Header({ restaurant, activeTab, onTabChange }: HeaderPro
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <div className="flex items-center gap-3 font-medium text-white hover:bg-white/10 text-sm md:text-base px-3 py-2 rounded-lg cursor-pointer transition-colors">
-                            <img
+                            <Image
                                 src="https://avatar.iran.liara.run/public"
                                 alt="Profile Avatar"
                                 className="w-8 h-8 rounded-full object-cover border-2 border-white/20"
+                                width={32}
+                                height={32}
                             />
                             <span className="truncate max-w-32 md:max-w-none">
                                 {restaurant.name}
@@ -121,10 +129,12 @@ export default function Header({ restaurant, activeTab, onTabChange }: HeaderPro
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="start">
                         <DropdownMenuLabel className="flex items-center gap-2">
-                            <img
+                            <Image
                                 src="https://avatar.iran.liara.run/public"
                                 alt="Profile Avatar"
                                 className="w-6 h-6 rounded-full object-cover"
+                                width={24}
+                                height={24}
                             />
                             {restaurant.name}
                         </DropdownMenuLabel>
@@ -150,5 +160,4 @@ export default function Header({ restaurant, activeTab, onTabChange }: HeaderPro
                 </DropdownMenu>
             </div>
         </header>
-    );
-}
+    );}
