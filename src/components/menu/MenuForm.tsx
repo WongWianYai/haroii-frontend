@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import Image  from "next/image";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -11,12 +12,12 @@ import {
   FileText,
   DollarSign,
   Tag,
-  Image,
   CheckCircle,
   Save,
   X,
-  Plus
+
 } from "lucide-react";
+import { FiUpload } from "react-icons/fi";
 import { apiClient } from "@/lib/api";
 import {
   Select,
@@ -249,14 +250,28 @@ export default function MenuForm({ menu, onSuccess, onClose }: MenuFormProps) {
 
             {/* Image Upload */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                <Image className="w-4 h-4 text-[#F38DA9]" />
+                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4 text-[#F38DA9]"
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="M21 15l-5-5L5 21" />
+                </svg>
                 รูปภาพ
-              </h3>
+                </h3>
 
               <div className="space-y-2">
                 <Label htmlFor="image" className="flex items-center gap-2 text-sm font-medium">
-                  <Image className="w-4 h-4 text-gray-500" />
+                  <FiUpload className="w-4 h-4 text-[#F38DA9]" />
                   อัปโหลดรูปภาพเมนู
                 </Label>
                 <Input
