@@ -1,4 +1,5 @@
 #!/bin/bash
 
+npm install
 npm run build
-npm start -- -p 2468
+npm start -p 2468
