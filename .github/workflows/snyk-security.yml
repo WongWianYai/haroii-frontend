@@ -81,7 +81,7 @@ jobs:
 
       - name: Save SARIF artifact
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: snyk-sarif-frontend
           path: artifacts/snyk-frontend.sarif
