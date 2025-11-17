@@ -1,0 +1,308 @@
+name: Snyk Security Scan
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  snyk-scan-backend:
+    name: Snyk Scan - Backend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: haroii-backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: haroii-backend
+        run: npm ci
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: test
+          args: --severity-threshold=high --file=haroii-backend/package.json
+
+      - name: Run Snyk Code Analysis
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: code test
+          args: --severity-threshold=high haroii-backend/
+
+      - name: Upload Snyk results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: snyk.sarif
+          category: snyk-backend
+
+  snyk-scan-admin-frontend:
+    name: Snyk Scan - Admin Frontend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: haroii-frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: haroii-frontend
+        run: npm ci
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: test
+          args: --severity-threshold=high --file=haroii-frontend/package.json
+
+      - name: Run Snyk Code Analysis
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: code test
+          args: --severity-threshold=high haroii-frontend/
+
+      - name: Upload Snyk results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: snyk.sarif
+          category: snyk-admin-frontend
+
+  snyk-scan-customer-frontend:
+    name: Snyk Scan - Customer Frontend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: customer-side-frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: customer-side-frontend
+        run: npm ci
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: test
+          args: --severity-threshold=high --file=customer-side-frontend/package.json
+
+      - name: Run Snyk Code Analysis
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: code test
+          args: --severity-threshold=high customer-side-frontend/
+
+      - name: Upload Snyk results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: snyk.sarif
+          category: snyk-customer-frontend
+
+  snyk-monitor:
+    name: Snyk Monitor - Track Dependencies
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Monitor Backend Dependencies
+        working-directory: haroii-backend
+        run: |
+          npm ci
+          npx snyk monitor --org=${{ secrets.SNYK_ORG_ID }} --project-name=haroii-backend
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Monitor Admin Frontend Dependencies
+        working-directory: haroii-frontend
+        run: |
+          npm ci
+          npx snyk monitor --org=${{ secrets.SNYK_ORG_ID }} --project-name=haroii-admin-frontend
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Monitor Customer Frontend Dependencies
+        working-directory: customer-side-frontend
+        run: |
+          npm ci
+          npx snyk monitor --org=${{ secrets.SNYK_ORG_ID }} --project-name=haroii-customer-frontend
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  snyk-container-scan:
+    name: Snyk Container Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker images
+        run: |
+          # Build backend image
+          if [ -f haroii-backend/Dockerfile ]; then
+            docker build -t haroii-backend:latest haroii-backend/
+          fi
+          
+          # Build frontend images
+          if [ -f haroii-frontend/Dockerfile ]; then
+            docker build -t haroii-admin-frontend:latest haroii-frontend/
+          fi
+          
+          if [ -f customer-side-frontend/Dockerfile ]; then
+            docker build -t haroii-customer-frontend:latest customer-side-frontend/
+          fi
+
+      - name: Scan Backend Container
+        if: hashFiles('haroii-backend/Dockerfile') != ''
+        uses: snyk/actions/docker@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: haroii-backend:latest
+          args: --severity-threshold=high
+
+      - name: Scan Admin Frontend Container
+        if: hashFiles('haroii-frontend/Dockerfile') != ''
+        uses: snyk/actions/docker@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: haroii-admin-frontend:latest
+          args: --severity-threshold=high
+
+      - name: Scan Customer Frontend Container
+        if: hashFiles('customer-side-frontend/Dockerfile') != ''
+        uses: snyk/actions/docker@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: haroii-customer-frontend:latest
+          args: --severity-threshold=high
+
+  create-issue-on-failure:
+    name: Create Issue on Security Failure
+    runs-on: ubuntu-latest
+    needs: [snyk-scan-backend, snyk-scan-admin-frontend, snyk-scan-customer-frontend]
+    if: failure()
+    
+    steps:
+      - name: Create Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '🔒 Security Vulnerabilities Detected by Snyk';
+            const body = `
+            ## Security Alert
+            
+            Snyk has detected security vulnerabilities in the codebase.
+            
+            **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            **Branch:** ${{ github.ref_name }}
+            **Commit:** ${{ github.sha }}
+            
+            ### Action Required
+            
+            1. Review the Snyk scan results in the workflow logs
+            2. Check the Security tab for detailed vulnerability information
+            3. Update vulnerable dependencies
+            4. Re-run the security scan
+            
+            ### Resources
+            
+            - [Snyk Dashboard](https://app.snyk.io)
+            - [Security Best Practices](./SECURITY_CODE_REVIEW.md)
+            
+            ---
+            *This issue was automatically created by the Snyk Security Scan workflow.*
+            `;
+            
+            // Check if issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'security,snyk'
+            });
+            
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['security', 'snyk', 'high-priority']
+              });
+            }
