@@ -32,38 +32,38 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        working-directory: ${{ matrix.project }}
         run: npm ci
+        working-directory: ${{ matrix.project }}
 
       - name: Run ESLint security checks
-        working-directory: ${{ matrix.project }}
         run: npm run lint
         continue-on-error: true
+        working-directory: ${{ matrix.project }}
 
       - name: Run npm audit
-        working-directory: ${{ matrix.project }}
         run: npm audit --audit-level=moderate
         continue-on-error: true
+        working-directory: ${{ matrix.project }}
 
       - name: Run Snyk Code Analysis
         uses: snyk/actions/node@master
         continue-on-error: true
-        working-directory: ${{ matrix.project }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           command: code test
           args: --severity-threshold=medium --sarif-file-output=snyk-${{ matrix.project }}.sarif
+          cwd: ${{ matrix.project }}
 
       - name: Run Snyk Dependency Scan
         uses: snyk/actions/node@master
         continue-on-error: true
-        working-directory: ${{ matrix.project }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           command: test
           args: --severity-threshold=high --all-projects
+          cwd: ${{ matrix.project }}
 
       - name: Upload Snyk SARIF
         if: always()
