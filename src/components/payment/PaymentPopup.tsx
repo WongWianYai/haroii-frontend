@@ -29,7 +29,49 @@ export default function PaymentPopup({
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [showQrCode, setShowQrCode] = useState(false);
   const confirmingRef = useRef(false); // Prevent duplicate confirmation calls
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // Validate QR code URL
+  useEffect(() => {
+    if (!qrCodeUrl) {
+      setShowQrCode(false);
+      return;
+    }
+
+    const urlString = qrCodeUrl.trim();
+    let isValid = false;
+    
+    // Validate data URL format
+    if (urlString.startsWith('data:image/')) {
+      const dataUrlPattern = /^data:image\/(png|jpeg|jpg|gif|svg\+xml);base64,[\w+/=]+$/;
+      isValid = dataUrlPattern.test(urlString);
+    }
+    // Validate HTTPS URL
+    else if (urlString.startsWith('https://')) {
+      try {
+        const url = new URL(urlString);
+        isValid = url.protocol === 'https:';
+      } catch {
+        isValid = false;
+      }
+    }
+
+    if (isValid) {
+      setShowQrCode(true);
+    } else {
+      setShowQrCode(false);
+      setError('QR Code URL ไม่ถูกต้อง');
+    }
+  }, [qrCodeUrl]);
+
+  // Set src via DOM manipulation after img is rendered
+  useEffect(() => {
+    if (showQrCode && qrCodeUrl && imgRef.current) {
+      imgRef.current.setAttribute('src', qrCodeUrl.trim());
+    }
+  }, [showQrCode, qrCodeUrl]);
 
   const getAuthHeaders = (): Record<string, string> => {
     const token = document.cookie
@@ -79,7 +121,14 @@ export default function PaymentPopup({
       }
 
       const data = await response.json();
-      setQrCodeUrl(data.qrCodeUrl);
+      
+      // Store QR code URL (will be validated by useMemo)
+      if (data.qrCodeUrl && typeof data.qrCodeUrl === 'string') {
+        setQrCodeUrl(data.qrCodeUrl);
+      } else {
+        throw new Error('ไม่พบ QR Code');
+      }
+      
       setPaymentId(data.paymentId);
       setRetryCount(0); // Reset retry count on success
     } catch (err: unknown) {
@@ -168,12 +217,16 @@ export default function PaymentPopup({
     } else {
       // Reset state when popup closes
       setQrCodeUrl(null);
+      setShowQrCode(false);
       setPaymentId(null);
       setError(null);
       setLoading(false);
       setConfirming(false);
       setRetryCount(0);
       confirmingRef.current = false;
+      if (imgRef.current) {
+        imgRef.current.removeAttribute('src');
+      }
     }
   }, [isOpen, tableSessionId, generateQRCode]);
 
@@ -248,15 +301,20 @@ export default function PaymentPopup({
             )}
 
             {/* QR Code Display */}
-            {qrCodeUrl && !loading && !error && (
+            {showQrCode && !loading && !error && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom duration-500">
                 {/* QR Code Image */}
                 <div className="flex justify-center">
                   <div className="bg-white p-4 rounded-xl shadow-lg border-2 border-gray-200 hover:border-[#F38DA9]/30 transition-all duration-300 hover:shadow-xl hover:scale-105">
                     <img
-                      src={qrCodeUrl}
+                      ref={imgRef}
                       alt="PromptPay QR Code"
                       className="w-64 h-64 object-contain"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        setError('ไม่สามารถโหลด QR Code ได้');
+                      }}
                     />
                   </div>
                 </div>
