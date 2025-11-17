@@ -220,10 +220,9 @@ const OrderHistory: React.FC = () => {
       });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = `รายงานออเดอร์_${
-        new Date().toISOString().split("T")[0]
-      }.csv`;
+      a.setAttribute("href", url);
+      a.setAttribute("download", `รายงานออเดอร์_${new Date().toISOString().split("T")[0]}.csv`);
+      a.style.display = "none";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
