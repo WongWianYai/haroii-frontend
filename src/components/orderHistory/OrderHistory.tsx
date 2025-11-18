@@ -144,6 +144,9 @@ const OrderHistory: React.FC = () => {
 
     setFilteredOrders(filtered);
     setTotalPages(Math.ceil(filtered.length / 20));
+    
+    // Reset to page 1 when filters change
+    setCurrentPage(1);
   };
 
   const handleSort = (field: SortField) => {
@@ -285,6 +288,14 @@ const OrderHistory: React.FC = () => {
 
   const calculateTotalIncome = () => {
     return filteredOrders.reduce((total, order) => total + order.total, 0);
+  };
+
+  // Get paginated orders for current page
+  const ITEMS_PER_PAGE = 20;
+  const getPaginatedOrders = () => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredOrders.slice(startIndex, endIndex);
   };
 
   const getStatusBreakdown = () => {
@@ -505,9 +516,8 @@ const OrderHistory: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredOrders &&
-              filteredOrders.length > 0 &&
-              filteredOrders.map((order) => (
+            {getPaginatedOrders().length > 0 &&
+              getPaginatedOrders().map((order) => (
                 <TableRow
                   key={order.id}
                   className="cursor-pointer hover:bg-gray-50"
