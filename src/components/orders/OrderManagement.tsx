@@ -897,37 +897,57 @@ export default function OrderManagement() {
                 </div>
                 <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {/* Payment button - only show if table is not paid */}
-                    {orders.length > 0 && !paidTables.has(orders[0].tableSessionId) && (
-                      <Button
-                        onClick={() => {
-                          const totalAmount = orders.reduce((sum, order) => sum + order.total, 0);
-                          openPaymentPopup(orders[0].tableSessionId, tableNo, totalAmount);
-                        }}
-                        className={`${
-                          orders.every((order) => order.status === "SERVED")
-                            ? "bg-green-600 hover:bg-green-700 active:bg-green-800"
-                            : "bg-gray-800 cursor-not-allowed"
-                        } text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg disabled:hover:scale-100 disabled:hover:shadow-none font-semibold`}
-                        size="sm"
-                        disabled={
-                          processingPayment === orders[0].tableSessionId ||
-                          !orders.every((order) => order.status === "SERVED")
-                        }
-                      >
-                        {processingPayment === orders[0].tableSessionId ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            กำลังเปิด...
-                          </>
-                        ) : (
-                          <>
-                            <CreditCard className="w-4 h-4 mr-2" />
-                            จ่ายเงิน (฿{orders.reduce((sum, order) => sum + order.total, 0).toLocaleString("th-TH")})
-                          </>
-                        )}
-                      </Button>
-                    )}
+                    {/* Payment button - only show if table is not paid and has served orders */}
+                    {orders.length > 0 && !paidTables.has(orders[0].tableSessionId) && (() => {
+                      const servedOrders = orders.filter((order) => order.status === "SERVED");
+                      const hasServedOrders = servedOrders.length > 0;
+                      const allOrdersCancelled = orders.every((order) => order.status === "CANCELLED");
+                      const totalAmount = servedOrders.reduce((sum, order) => sum + order.total, 0);
+                      
+                      // If all orders are cancelled, show close button instead of payment button
+                      if (allOrdersCancelled) {
+                        return (
+                          <Button
+                            onClick={() => closeTableSession(orders[0].tableSessionId)}
+                            className="bg-red-600 hover:bg-red-700 active:bg-red-800 text-white transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg font-semibold"
+                            size="sm"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            ปิดโต๊ะ (ยกเลิกทั้งหมด)
+                          </Button>
+                        );
+                      }
+                      
+                      return (
+                        <Button
+                          onClick={() => {
+                            openPaymentPopup(orders[0].tableSessionId, tableNo, totalAmount);
+                          }}
+                          className={`${
+                            hasServedOrders
+                              ? "bg-green-600 hover:bg-green-700 active:bg-green-800"
+                              : "bg-gray-800 cursor-not-allowed"
+                          } text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg disabled:hover:scale-100 disabled:hover:shadow-none font-semibold`}
+                          size="sm"
+                          disabled={
+                            processingPayment === orders[0].tableSessionId ||
+                            !hasServedOrders
+                          }
+                        >
+                          {processingPayment === orders[0].tableSessionId ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              กำลังเปิด...
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="w-4 h-4 mr-2" />
+                              จ่ายเงิน (฿{totalAmount.toLocaleString("th-TH")})
+                            </>
+                          )}
+                        </Button>
+                      );
+                    })()}
                     {/* Close table button - only show if table is paid */}
                     {orders.length > 0 && paidTables.has(orders[0].tableSessionId) && (
                       <Button
@@ -949,7 +969,7 @@ export default function OrderManagement() {
                       <span className="text-sm">฿</span>
                       <span className="text-lg">
                         {Number(
-                          orders.reduce((sum, order) => sum + order.total, 0)
+                          orders.filter((order) => order.status === "SERVED").reduce((sum, order) => sum + order.total, 0)
                         ).toLocaleString("th-TH")}
                       </span>
                     </div>
